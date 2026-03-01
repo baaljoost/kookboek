@@ -44,6 +44,37 @@ export default async function ReceptPagina({
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
+        {/* Foto's — boven de titel */}
+        {recept.fotos.length > 0 && (
+          <div
+            className={`mb-8 ${
+              recept.fotos.length === 1
+                ? ""
+                : "grid grid-cols-2 gap-3"
+            }`}
+          >
+            {recept.fotos.map((foto, i) => (
+              <div
+                key={foto.id}
+                className={`overflow-hidden bg-neutral-100 ${
+                  recept.fotos.length === 1
+                    ? "aspect-[16/9]"
+                    : "aspect-square"
+                } ${i === 0 && recept.fotos.length > 1 ? "col-span-2 aspect-[16/7]" : ""}`}
+              >
+                <Image
+                  src={foto.url}
+                  alt={foto.altTekst ?? recept.titel}
+                  width={1200}
+                  height={675}
+                  className="w-full h-full object-cover"
+                  priority={i === 0}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Titel & meta */}
         <div className="mb-8">
           <p className="text-xs uppercase tracking-widest text-neutral-400 mb-3">
@@ -79,37 +110,6 @@ export default async function ReceptPagina({
             </div>
           )}
         </div>
-
-        {/* Foto's */}
-        {recept.fotos.length > 0 && (
-          <div
-            className={`mb-10 ${
-              recept.fotos.length === 1
-                ? ""
-                : "grid grid-cols-2 gap-3"
-            }`}
-          >
-            {recept.fotos.map((foto, i) => (
-              <div
-                key={foto.id}
-                className={`overflow-hidden bg-neutral-100 ${
-                  recept.fotos.length === 1
-                    ? "aspect-[16/9]"
-                    : "aspect-square"
-                } ${i === 0 && recept.fotos.length > 1 ? "col-span-2 aspect-[16/7]" : ""}`}
-              >
-                <Image
-                  src={foto.url}
-                  alt={foto.altTekst ?? recept.titel}
-                  width={1200}
-                  height={675}
-                  className="w-full h-full object-cover"
-                  priority={i === 0}
-                />
-              </div>
-            ))}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {/* Ingrediënten */}
