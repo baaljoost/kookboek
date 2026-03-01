@@ -4,6 +4,8 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Categorie } from "@prisma/client";
 import { categorieLabels } from "@/lib/categorieLabels";
+import FotoOcr from "@/components/admin/FotoOcr";
+import type { ParsedRecept } from "@/lib/parseReceptTekst";
 
 interface Ingredient {
   id?: number;
@@ -95,6 +97,17 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
     }));
 
     setImportBezig(false);
+  }
+
+  function handleOcrImport(data: ParsedRecept) {
+    setFormData((prev) => ({
+      ...prev,
+      titel: data.titel || prev.titel,
+      porties: data.porties || prev.porties,
+      bereidingstijd: data.bereidingstijd || prev.bereidingstijd,
+      ingredienten: data.ingredienten.length > 0 ? data.ingredienten : prev.ingredienten,
+      stappen: data.stappen.length > 0 ? data.stappen : prev.stappen,
+    }));
   }
 
   const [formData, setFormData] = useState<FormData>({
@@ -252,6 +265,19 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
           {importFout && (
             <p className="text-red-600 text-xs mt-2">{importFout}</p>
           )}
+        </section>
+      )}
+
+      {/* Foto OCR Import */}
+      {!receptId && (
+        <section className="bg-cream-100 border border-neutral-200 p-5">
+          <h2 className="font-serif text-xl text-neutral-900 mb-1">
+            Importeer van foto
+          </h2>
+          <p className="text-xs text-neutral-400 mb-3">
+            Upload een foto van een recept (kookboek, tijdschrift). De tekst wordt automatisch uitgelezen.
+          </p>
+          <FotoOcr onImport={handleOcrImport} />
         </section>
       )}
 
