@@ -16,7 +16,19 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx tsx:*)",
+      "Bash(console.log:*)",
+      "Bash(data.props.pageProps:*)",
+      "Bash(pp.recipe:*)",
+      "Bash(EOF:*)",
+      "Bash(scripts.forEach:*)",
+      "Bash(fetch:*)",
+      "Bash(s.includes:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(await:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
