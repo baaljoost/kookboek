@@ -3,6 +3,8 @@ import { categorieLabels } from "@/lib/categorieLabels";
 import Link from "next/link";
 import VerwijderKnop from "@/components/admin/VerwijderKnop";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminReceptenPage() {
   const recepten = await prisma.recept.findMany({
     orderBy: { createdAt: "desc" },

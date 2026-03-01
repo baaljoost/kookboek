@@ -6,6 +6,7 @@ import Link from "next/link";
 import PortieSchuif from "@/components/PortieSchuif";
 import Sterrenbeoordeling from "@/components/Sterrenbeoordeling";
 import FotoBewerken from "@/components/FotoBewerken";
+import VerwijderReceptKnop from "@/components/VerwijderReceptKnop";
 
 export const dynamic = "force-dynamic";
 
@@ -37,13 +38,14 @@ export default async function ReceptPagina({
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white">
-        <div className="max-w-4xl mx-auto px-6 py-5">
+        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
           <Link
             href="/"
             className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors"
           >
             ← Het Kookboek van Joost
           </Link>
+          <VerwijderReceptKnop id={recept.id} titel={recept.titel} />
         </div>
       </header>
 
