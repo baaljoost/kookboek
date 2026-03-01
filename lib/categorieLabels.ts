@@ -13,4 +13,5 @@ export const categorieLabels: Record<Categorie, string> = {
   ONTBIJT: "Ontbijt",
   DESSERT: "Dessert & gebak",
   SAUZEN: "Sauzen & basics",
+  OVERIG: "Overig",
 };

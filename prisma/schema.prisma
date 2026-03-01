@@ -83,4 +83,5 @@ enum Categorie {
   ONTBIJT
   DESSERT
   SAUZEN
+  OVERIG
 }
