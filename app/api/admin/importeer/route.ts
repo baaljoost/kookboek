@@ -24,7 +24,6 @@ interface JsonLdRecipe {
 }
 
 function parseIsoDuration(iso: string): number | null {
-  // PT30M -> 30, PT1H30M -> 90
   const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
   if (!match) return null;
   const uren = parseInt(match[1] ?? "0");
@@ -45,11 +44,10 @@ function parseInstructies(
   if (!instructies) return [];
 
   if (typeof instructies === "string") {
-    // Soms één lange string met genummerde stappen
     return instructies
       .split(/\n+/)
       .map((s) => s.replace(/^\d+[\.\)]\s*/, "").trim())
-      .filter(Boolean);
+      .filter((s) => s.length > 10);
   }
 
   if (Array.isArray(instructies)) {
@@ -79,8 +77,6 @@ interface ParsedIngredient {
 }
 
 function parseIngredient(tekst: string): ParsedIngredient {
-  // Probeer hoeveelheid + eenheid + naam te splitsen
-  // Bijv: "200 gram bloem" / "2 el olijfolie" / "3 knoflookteentjes, fijngehakt"
   const notitieMatch = tekst.match(/^(.+?),\s*(.+)$/);
   const notitie = notitieMatch ? notitieMatch[2].trim() : "";
   const basisTekst = notitieMatch ? notitieMatch[1].trim() : tekst.trim();
@@ -107,29 +103,235 @@ function vindJsonLd(html: string): JsonLdRecipe | null {
 
   while ((match = scriptRegex.exec(html)) !== null) {
     try {
-      const data = JSON.parse(match[1]);
+      // Verwijder control characters die JSON.parse breken
+      const cleaned = match[1].replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, " ");
+      const data = JSON.parse(cleaned);
 
-      // Kan direct een Recipe zijn
+      // Direct Recipe object
       if (data["@type"] === "Recipe") return data as JsonLdRecipe;
 
-      // Kan een array zijn
+      // Array van objecten
       if (Array.isArray(data)) {
         const recept = data.find((item) => item["@type"] === "Recipe");
         if (recept) return recept as JsonLdRecipe;
       }
 
-      // Kan een @graph hebben
-      if (data["@graph"]) {
+      // @graph array
+      if (data["@graph"] && Array.isArray(data["@graph"])) {
         const recept = data["@graph"].find(
           (item: { "@type": string }) => item["@type"] === "Recipe"
         );
         if (recept) return recept as JsonLdRecipe;
       }
     } catch {
-      // Ongeldige JSON, skip
+      // Ongeldige JSON, probeer volgende
     }
   }
 
+  return null;
+}
+
+// Strip HTML tags en geef platte tekst terug
+function stripHtml(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#\d+;/g, " ")
+    .replace(/&[a-z]+;/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+// Extraheer tekst uit een HTML-sectie (bv. een <ul> of <div>)
+function extractTextFromHtmlSection(section: string): string[] {
+  // Splits op li-elementen of regeleindes
+  const items = section
+    .split(/<\/li>|<br\s*\/?>|\n/gi)
+    .map((s) => stripHtml(s).trim())
+    .filter((s) => s.length > 1);
+  return items;
+}
+
+// WPRM (WP Recipe Maker) plugin scraper
+function scrapWprm(html: string): Partial<JsonLdRecipe> | null {
+  if (!html.includes("wprm-recipe")) return null;
+
+  // Titel
+  const titelMatch = html.match(/class="[^"]*wprm-recipe-name[^"]*"[^>]*>([^<]+)</i);
+  const titel = titelMatch ? titelMatch[1].trim() : null;
+
+  // Porties
+  const portiesMatch = html.match(/class="[^"]*wprm-recipe-servings[^"]*"[^>]*>([^<]+)</i);
+  const portiesStr = portiesMatch ? portiesMatch[1].trim() : null;
+
+  // Bereidingstijd
+  const tijdMatch = html.match(/class="[^"]*wprm-recipe-total_time-minutes[^"]*"[^>]*>([^<]+)</i);
+  const minuten = tijdMatch ? parseInt(tijdMatch[1]) : null;
+
+  // Ingrediënten via wprm spans
+  const ingrItems = html.match(/<li class="wprm-recipe-ingredient"[\s\S]*?<\/li>/gi) || [];
+  const ingredienten: string[] = ingrItems.map((li) => {
+    const amount = (li.match(/class="wprm-recipe-ingredient-amount"[^>]*>([^<]+)</) || [])[1] || "";
+    const unit = (li.match(/class="wprm-recipe-ingredient-unit"[^>]*>([^<]+)</) || [])[1] || "";
+    const name = (li.match(/class="wprm-recipe-ingredient-name"[^>]*>([^<]+)</) || [])[1] || "";
+    const note = (li.match(/class="wprm-recipe-ingredient-notes[^"]*"[^>]*>\(([^)]+)\)/) || [])[1] || "";
+    return [amount, unit, name, note ? `, ${note}` : ""].filter(Boolean).join(" ").trim();
+  });
+
+  // Stappen via wprm
+  const stapItems = html.match(/<li class="wprm-recipe-instruction[^"]*"[\s\S]*?<\/li>/gi) || [];
+  const stappen: string[] = stapItems.map((li) => {
+    const text = (li.match(/class="wprm-recipe-instruction-text[^"]*"[^>]*>([\s\S]*?)<\//) || [])[1] || "";
+    return stripHtml(text).trim();
+  }).filter(Boolean);
+
+  // Foto
+  const imgMatch = html.match(/class="[^"]*wprm-recipe-image[^"]*"[\s\S]*?src="([^"]+)"/i);
+  const fotoUrl = imgMatch ? imgMatch[1] : null;
+
+  if (!titel && ingredienten.length === 0) return null;
+
+  return {
+    name: titel || undefined,
+    recipeYield: portiesStr || undefined,
+    totalTime: minuten ? `PT${minuten}M` : undefined,
+    recipeIngredient: ingredienten,
+    recipeInstructions: stappen.map((tekst) => ({ "@type": "HowToStep", text: tekst })),
+    image: fotoUrl || undefined,
+  };
+}
+
+// Heuristieke HTML-fallback scraper
+function scrapHtmlFallback(html: string, url: string): Partial<JsonLdRecipe> | null {
+  // Probeer eerst WPRM plugin
+  const wprm = scrapWprm(html);
+  if (wprm && (wprm.recipeIngredient?.length ?? 0) > 0) return wprm;
+
+  // Generieke fallback: zoek naar gestructureerde ingredient- en stap-secties
+
+  // Titel: <h1> of <title>
+  const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  const titleTagMatch = html.match(/<title[^>]*>([^<|–\-]+)/i);
+  const titel = h1Match ? stripHtml(h1Match[1]).trim() : (titleTagMatch ? titleTagMatch[1].trim() : null);
+
+  // Foto: eerste grote afbeelding (og:image of eerste img met groot formaat)
+  const ogImageMatch = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i)
+    || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/i);
+  const fotoUrl = ogImageMatch ? ogImageMatch[1] : null;
+
+  // Bereidingstijd: zoek naar patronen als "30 minuten" of "1 uur"
+  const tijdMatch = html.match(/(\d+)\s*(?:minuten?|min\.?)\b/i)
+    || html.match(/(\d+)\s*(?:uur|hour)/i);
+  let bereidingstijd: string | undefined;
+  if (tijdMatch) {
+    const min = html.match(/(\d+)\s*uur/i)
+      ? parseInt((html.match(/(\d+)\s*uur/i) || ["", "0"])[1]) * 60 + parseInt((html.match(/(\d+)\s*min/i) || ["", "0"])[1])
+      : parseInt(tijdMatch[1]);
+    bereidingstijd = `PT${min}M`;
+  }
+
+  // Porties: zoek naar "4 personen" of "serves 4"
+  const portiesMatch = html.match(/(\d+)\s*(?:personen?|porties?|persons?|servings?|serves?)/i);
+  const porties = portiesMatch ? portiesMatch[1] : undefined;
+
+  // Ingrediënten: zoek sectie met "ingrediënten" header gevolgd door een lijst
+  const ingredienten = extractIngredients(html);
+
+  // Stappen: zoek sectie met "bereiding" of "instructies" of "werkwijze"
+  const stappen = extractStappen(html);
+
+  if (!titel || (ingredienten.length === 0 && stappen.length === 0)) return null;
+
+  return {
+    name: titel,
+    recipeYield: porties,
+    totalTime: bereidingstijd,
+    recipeIngredient: ingredienten,
+    recipeInstructions: stappen.map((tekst) => ({ "@type": "HowToStep", text: tekst })),
+    image: fotoUrl || undefined,
+  };
+}
+
+function extractIngredients(html: string): string[] {
+  // Patroon 1: sectie met class die "ingredient" bevat
+  const ingrContainerMatch = html.match(
+    /class="[^"]*ingredi[^"]*"[^>]*>([\s\S]{50,3000}?)(?:<\/(?:div|section|article|ul)>[\s\S]{0,200}?(?:bereiding|instructie|werkwijze|method|directions|steps|preparation)|$)/i
+  );
+
+  if (ingrContainerMatch) {
+    const items = ingrContainerMatch[1].match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
+    const parsed = items.map((li) => stripHtml(li).trim()).filter((s) => s.length > 1 && s.length < 200);
+    if (parsed.length > 0) return parsed;
+  }
+
+  // Patroon 2: zoek naar <ul> na "ingrediënten" / "ingredients" header
+  const headerPatterns = [
+    /(?:ingrediënten|ingredienten|ingredients)[^<]{0,100}<(?:ul|ol)[^>]*>([\s\S]{10,3000}?)<\/(?:ul|ol)>/gi,
+    /(?:h[1-4])[^>]*>[\s\S]*?ingredi[\s\S]*?<\/h[1-4]>[\s\S]{0,500}?<(?:ul|ol)[^>]*>([\s\S]{10,2000}?)<\/(?:ul|ol)>/gi,
+  ];
+
+  for (const pattern of headerPatterns) {
+    const m = pattern.exec(html);
+    if (m) {
+      const items = m[1].match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
+      const parsed = items.map((li) => stripHtml(li).trim()).filter((s) => s.length > 1 && s.length < 200);
+      if (parsed.length > 2) return parsed;
+    }
+  }
+
+  return [];
+}
+
+function extractStappen(html: string): string[] {
+  // Patroon 1: class met "instruction" / "bereiding" / "step"
+  const stapContainerMatch = html.match(
+    /class="[^"]*(?:instruction|bereiding|preparation|steps?|method|werkwijze)[^"]*"[^>]*>([\s\S]{50,5000}?)(?:<\/(?:div|section|article)>[\s\S]{0,100}?(?:tip|note|opmerking|comment)|$)/i
+  );
+
+  if (stapContainerMatch) {
+    // Zoek genummerde li's of p tags
+    const liItems = stapContainerMatch[1].match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
+    const parsed = liItems.map((li) => stripHtml(li).trim()).filter((s) => s.length > 15);
+    if (parsed.length > 0) return parsed;
+
+    // Zoek p tags als fallback
+    const pItems = stapContainerMatch[1].match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
+    const parsedP = pItems.map((p) => stripHtml(p).trim()).filter((s) => s.length > 20);
+    if (parsedP.length > 0) return parsedP;
+  }
+
+  // Patroon 2: header gevolgd door ol
+  const headerPatterns = [
+    /(?:bereiding|werkwijze|instructies|preparation|directions|method)[^<]{0,100}<(?:ul|ol)[^>]*>([\s\S]{10,5000}?)<\/(?:ul|ol)>/gi,
+    /(?:h[1-4])[^>]*>[\s\S]*?(?:bereiding|werkwijze|instructie|method)[\s\S]*?<\/h[1-4]>[\s\S]{0,500}?<(?:ol|ul)[^>]*>([\s\S]{10,3000}?)<\/(?:ol|ul)>/gi,
+  ];
+
+  for (const pattern of headerPatterns) {
+    const m = pattern.exec(html);
+    if (m) {
+      const items = m[1].match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
+      const parsed = items.map((li) => stripHtml(li).trim()).filter((s) => s.length > 15);
+      if (parsed.length > 0) return parsed;
+    }
+  }
+
+  return [];
+}
+
+function extractFotoUrl(jsonLd: JsonLdRecipe): string | null {
+  if (!jsonLd.image) return null;
+  if (typeof jsonLd.image === "string") return jsonLd.image;
+  if (Array.isArray(jsonLd.image)) {
+    return typeof jsonLd.image[0] === "string"
+      ? jsonLd.image[0]
+      : (jsonLd.image[0] as { url?: string })?.url ?? null;
+  }
+  if (typeof jsonLd.image === "object" && jsonLd.image.url) return jsonLd.image.url;
   return null;
 }
 
@@ -145,8 +347,9 @@ export async function POST(request: NextRequest) {
     const res = await fetch(url, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; Kookboek/1.0; recepten-import)",
-        Accept: "text/html",
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "nl-NL,nl;q=0.9,en;q=0.8",
       },
       signal: AbortSignal.timeout(10000),
     });
@@ -159,43 +362,41 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const jsonLd = vindJsonLd(html);
+  // Stap 1: probeer JSON-LD
+  let recept = vindJsonLd(html);
 
-  if (!jsonLd) {
+  // Stap 2: probeer HTML-fallback scraping
+  if (!recept) {
+    const fallback = scrapHtmlFallback(html, url);
+    if (fallback) {
+      recept = fallback as JsonLdRecipe;
+    }
+  }
+
+  if (!recept || !recept.name) {
     return NextResponse.json(
       { error: "Geen receptdata gevonden op deze pagina. Vul het recept handmatig in." },
       { status: 422 }
     );
   }
 
-  // Bereidingstijd: totalTime > cookTime + prepTime
+  // Bereidingstijd
   let bereidingstijd: number | null = null;
-  if (jsonLd.totalTime) {
-    bereidingstijd = parseIsoDuration(jsonLd.totalTime);
-  } else if (jsonLd.cookTime || jsonLd.prepTime) {
-    const cook = jsonLd.cookTime ? parseIsoDuration(jsonLd.cookTime) ?? 0 : 0;
-    const prep = jsonLd.prepTime ? parseIsoDuration(jsonLd.prepTime) ?? 0 : 0;
+  if (recept.totalTime) {
+    bereidingstijd = parseIsoDuration(recept.totalTime);
+  } else if (recept.cookTime || recept.prepTime) {
+    const cook = recept.cookTime ? parseIsoDuration(recept.cookTime) ?? 0 : 0;
+    const prep = recept.prepTime ? parseIsoDuration(recept.prepTime) ?? 0 : 0;
     bereidingstijd = cook + prep || null;
   }
 
-  const ingredienten = (jsonLd.recipeIngredient ?? []).map(parseIngredient);
-  const stappen = parseInstructies(jsonLd.recipeInstructions);
-
-  // Foto-URL extraheren
-  let fotoUrl: string | null = null;
-  if (jsonLd.image) {
-    if (typeof jsonLd.image === "string") {
-      fotoUrl = jsonLd.image;
-    } else if (Array.isArray(jsonLd.image)) {
-      fotoUrl = typeof jsonLd.image[0] === "string" ? jsonLd.image[0] : (jsonLd.image[0] as { url?: string })?.url ?? null;
-    } else if (typeof jsonLd.image === "object" && jsonLd.image.url) {
-      fotoUrl = jsonLd.image.url;
-    }
-  }
+  const ingredienten = (recept.recipeIngredient ?? []).map(parseIngredient);
+  const stappen = parseInstructies(recept.recipeInstructions);
+  const fotoUrl = extractFotoUrl(recept);
 
   return NextResponse.json({
-    titel: jsonLd.name ?? "",
-    porties: parsePorties(jsonLd.recipeYield),
+    titel: recept.name ?? "",
+    porties: parsePorties(recept.recipeYield),
     bereidingstijd,
     herkomstUrl: url,
     herkomstNaam: new URL(url).hostname.replace(/^www\./, ""),

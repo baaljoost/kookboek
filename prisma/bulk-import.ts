@@ -119,7 +119,7 @@ const urls = [
 ];
 
 // Uniek maken
-const uniqueUrls = [...new Set(urls)];
+const uniqueUrls = Array.from(new Set(urls));
 
 interface ParsedIngredient {
   hoeveelheid: string;
