@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+
+@layer base {
+  body {
+    @apply font-sans text-neutral-800 bg-cream-50;
+  }
+
+  h1, h2, h3 {
+    @apply font-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-olive-700 text-white px-5 py-2.5 text-sm font-medium hover:bg-olive-800 transition-colors;
+  }
+
+  .btn-secondary {
+    @apply border border-neutral-300 text-neutral-700 px-5 py-2.5 text-sm font-medium hover:bg-neutral-50 transition-colors;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white px-5 py-2.5 text-sm font-medium hover:bg-red-700 transition-colors;
+  }
+
+  .input {
+    @apply w-full border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-olive-600 transition-colors;
+  }
+
+  .label {
+    @apply block text-xs uppercase tracking-widest text-neutral-500 mb-1.5;
+  }
+}

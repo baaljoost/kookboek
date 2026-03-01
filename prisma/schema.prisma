@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model Recept {
+  id              Int           @id @default(autoincrement())
+  slug            String        @unique
+  titel           String
+  categorie       Categorie
+  porties         Int?
+  bereidingstijd  Int?          // in minuten
+  beoordeling     Int?          // 1-5
+  herkomstNaam    String?
+  herkomstUrl     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  ingredienten    Ingredient[]
+  stappen         Stap[]
+  fotos           Foto[]
+  tags            ReceptTag[]
+}
+
+model Ingredient {
+  id          Int     @id @default(autoincrement())
+  volgorde    Int
+  hoeveelheid Float?
+  eenheid     String?
+  naam        String
+  notitie     String?
+  receptId    Int
+  recept      Recept  @relation(fields: [receptId], references: [id], onDelete: Cascade)
+}
+
+model Stap {
+  id       Int    @id @default(autoincrement())
+  volgorde Int
+  tekst    String
+  receptId Int
+  recept   Recept @relation(fields: [receptId], references: [id], onDelete: Cascade)
+}
+
+model Foto {
+  id       Int    @id @default(autoincrement())
+  volgorde Int
+  url      String
+  altTekst String?
+  receptId Int
+  recept   Recept @relation(fields: [receptId], references: [id], onDelete: Cascade)
+}
+
+model Tag {
+  id      Int         @id @default(autoincrement())
+  naam    String      @unique
+  recepten ReceptTag[]
+}
+
+model ReceptTag {
+  receptId Int
+  tagId    Int
+  recept   Recept @relation(fields: [receptId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([receptId, tagId])
+}
+
+enum Categorie {
+  PASTA
+  CURRY
+  SOEP
+  SALADE
+  RIJST_EN_GRANEN
+  VLEES
+  VIS_EN_ZEEVRUCHTEN
+  GROENTEN
+  SNACKS
+  ONTBIJT
+  DESSERT
+  SAUZEN
+}
