@@ -89,6 +89,9 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
       herkomstUrl: data.herkomstUrl || prev.herkomstUrl,
       ingredienten: data.ingredienten?.length ? data.ingredienten : prev.ingredienten,
       stappen: data.stappen?.length ? data.stappen : prev.stappen,
+      fotos: data.fotoUrl
+        ? [{ url: data.fotoUrl, altTekst: data.titel ?? "" }, ...prev.fotos].slice(0, 5)
+        : prev.fotos,
     }));
 
     setImportBezig(false);

@@ -186,6 +186,18 @@ export async function POST(request: NextRequest) {
   const ingredienten = (jsonLd.recipeIngredient ?? []).map(parseIngredient);
   const stappen = parseInstructies(jsonLd.recipeInstructions);
 
+  // Foto-URL extraheren
+  let fotoUrl: string | null = null;
+  if (jsonLd.image) {
+    if (typeof jsonLd.image === "string") {
+      fotoUrl = jsonLd.image;
+    } else if (Array.isArray(jsonLd.image)) {
+      fotoUrl = typeof jsonLd.image[0] === "string" ? jsonLd.image[0] : (jsonLd.image[0] as { url?: string })?.url ?? null;
+    } else if (typeof jsonLd.image === "object" && jsonLd.image.url) {
+      fotoUrl = jsonLd.image.url;
+    }
+  }
+
   return NextResponse.json({
     titel: jsonLd.name ?? "",
     porties: parsePorties(jsonLd.recipeYield),
@@ -194,5 +206,6 @@ export async function POST(request: NextRequest) {
     herkomstNaam: new URL(url).hostname.replace(/^www\./, ""),
     ingredienten,
     stappen: stappen.map((tekst) => ({ tekst })),
+    fotoUrl,
   });
 }
