@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PortieSchuif from "@/components/PortieSchuif";
 import Sterrenbeoordeling from "@/components/Sterrenbeoordeling";
+import FotoBewerken from "@/components/FotoBewerken";
 
 export async function generateStaticParams() {
   const recepten = await prisma.recept.findMany({ select: { slug: true } });
@@ -46,35 +47,45 @@ export default async function ReceptPagina({
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         {/* Foto's — boven de titel */}
-        {recept.fotos.length > 0 && (
-          <div
-            className={`mb-8 ${
-              recept.fotos.length === 1
-                ? ""
-                : "grid grid-cols-2 gap-3"
-            }`}
-          >
-            {recept.fotos.map((foto, i) => (
-              <div
-                key={foto.id}
-                className={`overflow-hidden bg-neutral-100 ${
-                  recept.fotos.length === 1
-                    ? "aspect-[16/9]"
-                    : "aspect-square"
-                } ${i === 0 && recept.fotos.length > 1 ? "col-span-2 aspect-[16/7]" : ""}`}
-              >
-                <Image
-                  src={foto.url}
-                  alt={foto.altTekst ?? recept.titel}
-                  width={1200}
-                  height={675}
-                  className="w-full h-full object-cover"
-                  priority={i === 0}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        <div
+          className={`relative group mb-8 ${
+            recept.fotos.length === 0
+              ? "aspect-[16/9] bg-neutral-100 flex items-center justify-center"
+              : recept.fotos.length === 1
+              ? ""
+              : "grid grid-cols-2 gap-3"
+          }`}
+        >
+          {recept.fotos.length === 0 && (
+            <svg className="w-12 h-12 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          )}
+          {recept.fotos.map((foto, i) => (
+            <div
+              key={foto.id}
+              className={`overflow-hidden bg-neutral-100 ${
+                recept.fotos.length === 1
+                  ? "aspect-[16/9]"
+                  : "aspect-square"
+              } ${i === 0 && recept.fotos.length > 1 ? "col-span-2 aspect-[16/7]" : ""}`}
+            >
+              <Image
+                src={foto.url}
+                alt={foto.altTekst ?? recept.titel}
+                width={1200}
+                height={675}
+                className="w-full h-full object-cover"
+                priority={i === 0}
+              />
+            </div>
+          ))}
+          <FotoBewerken
+            receptId={recept.id}
+            fotos={recept.fotos}
+            receptTitel={recept.titel}
+          />
+        </div>
 
         {/* Titel & meta */}
         <div className="mb-8">
