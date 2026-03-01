@@ -7,6 +7,8 @@ import PortieSchuif from "@/components/PortieSchuif";
 import Sterrenbeoordeling from "@/components/Sterrenbeoordeling";
 import FotoBewerken from "@/components/FotoBewerken";
 
+export const dynamic = "force-dynamic";
+
 export async function generateStaticParams() {
   const recepten = await prisma.recept.findMany({ select: { slug: true } });
   return recepten.map((r) => ({ slug: r.slug }));
