@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Het kookboek van Joost",
+  title: "Het Kookboek van Joost",
   description: "Mijn persoonlijke receptenverzameling",
 };
 

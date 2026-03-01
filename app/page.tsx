@@ -46,7 +46,7 @@ export default async function HomePage({
       <header className="border-b border-neutral-200 bg-white">
         <div className="max-w-6xl mx-auto px-6 py-8">
           <h1 className="font-serif text-4xl md:text-5xl text-neutral-900 tracking-tight">
-            Het kookboek van Joost
+            Het Kookboek van Joost
           </h1>
           <p className="mt-1 text-neutral-500 font-sans text-sm tracking-wide">
             {recepten.length} recepten

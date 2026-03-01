@@ -39,7 +39,7 @@ export default async function ReceptPagina({
             href="/"
             className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors"
           >
-            ← Het kookboek van Joost
+            ← Het Kookboek van Joost
           </Link>
         </div>
       </header>
