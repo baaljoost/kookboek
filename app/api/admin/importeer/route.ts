@@ -323,6 +323,36 @@ function extractStappen(html: string): string[] {
   return [];
 }
 
+type Categorie =
+  | "PASTA" | "CURRY" | "SOEP" | "SALADE" | "RIJST_EN_GRANEN"
+  | "VLEES" | "VIS_EN_ZEEVRUCHTEN" | "GROENTEN" | "SNACKS"
+  | "ONTBIJT" | "DESSERT" | "SAUZEN" | "OVERIG";
+
+function detecteerCategorie(titel: string, ingredienten: ParsedIngredient[]): Categorie {
+  const tekst = [titel, ...ingredienten.map((i) => i.naam)].join(" ").toLowerCase();
+
+  const patronen: [Categorie, RegExp][] = [
+    ["PASTA",           /\b(pasta|spaghetti|penne|fusilli|lasagna|lasagne|tagliatelle|fettuccine|rigatoni|linguine|gnocchi|ravioli|tortellini|macaroni|noodle)\b/],
+    ["CURRY",           /\b(curry|kerrie|tikka|masala|korma|dal|dahl|rendang|sambal|kokos(?:melk)?)\b/],
+    ["SOEP",            /\b(soep|bouillon|bisque|gazpacho|minestrone|chowder|consomm[eé])\b/],
+    ["SALADE",          /\b(salade|coleslaw|tabouleh|tabbouleh)\b/],
+    ["RIJST_EN_GRANEN", /\b(rijst|risotto|pilaf|paella|couscous|quinoa|bulgur|gierst|polenta|spelt|gerst)\b/],
+    ["VIS_EN_ZEEVRUCHTEN", /\b(vis|zalm|kabeljauw|tonijn|garnalen?|garnaal|mosselen?|inktvis|schelvis|forel|makreel|tilapia|pangasius|zeebaars|zeevruchten|seafood|sushi|sashimi|crevetten?|langoustine|kreeft|krab)\b/],
+    ["VLEES",           /\b(kip|kippendij|kipfilet|gehakt|rundvlees|rund|varken|varkensvlees|lamsvlees|lam|spek|worst|biefstuk|hamburger|pulled pork|ribben|steak|entrecote|rosbief|bacon|salami|chorizo|tartaar)\b/],
+    ["GROENTEN",        /\b(groenten?|vegan|vegetarisch|tofu|tempeh|peulvruchten|linzen|kikkererwten|bonen|aubergine|courgette|broccoli|bloemkool|spinazie|paddenstoel|champignon|prei|venkel|pastinaak)\b/],
+    ["DESSERT",         /\b(taart|cake|koek|gebak|pudding|mousse|tiramisu|brownie|muffin|cheesecake|crumble|sorbet|ijs|panna cotta|crème br[uû]l[eé]e|wafels|pannenkoek)\b/],
+    ["ONTBIJT",         /\b(ontbijt|granola|muesli|havermout|overnight oats|smoothie|pannenkoek|wentelteefje|ei(?:eren)?|omelet|roerei|spiegelei|toast|bagel|overnight)\b/],
+    ["SNACKS",          /\b(snack|borrelhapje|dip|hummus|guacamole|wrap|taco|quesadilla|nachos|pizza|bruschetta|crostini|bitterbal|kroket|frikandel)\b/],
+    ["SAUZEN",          /\b(saus|dressing|vinaigrette|pesto|aioli|mayonaise|ketchup|chimichurri|salsa|jus|marinade|glaz[ue]ur)\b/],
+  ];
+
+  for (const [categorie, patroon] of patronen) {
+    if (patroon.test(tekst)) return categorie;
+  }
+
+  return "OVERIG";
+}
+
 function extractFotoUrl(jsonLd: JsonLdRecipe): string | null {
   if (!jsonLd.image) return null;
   if (typeof jsonLd.image === "string") return jsonLd.image;
@@ -401,6 +431,8 @@ export async function POST(request: NextRequest) {
     fotoUrl = ogMatch ? ogMatch[1] : null;
   }
 
+  const categorie = detecteerCategorie(recept.name ?? "", ingredienten);
+
   return NextResponse.json({
     titel: recept.name ?? "",
     porties: parsePorties(recept.recipeYield),
@@ -410,5 +442,6 @@ export async function POST(request: NextRequest) {
     ingredienten,
     stappen: stappen.map((tekst) => ({ tekst })),
     fotoUrl,
+    categorie,
   });
 }
