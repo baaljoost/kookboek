@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { maakSlug } from "@/lib/slug";
 import { Categorie } from "@prisma/client";
@@ -24,10 +23,6 @@ interface ReceptPayload {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 });
-  }
-
   const body: ReceptPayload = await request.json();
 
   // Unieke slug genereren

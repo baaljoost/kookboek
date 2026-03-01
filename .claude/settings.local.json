@@ -10,7 +10,13 @@
       "Bash(source:*)",
       "Bash(npm install:*)",
       "Bash(npx prisma:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(vercel:*)",
+      "Bash(POSTGRES_PRISMA_URL=\"postgresql://neondb_owner:npg_dBLNcJAX2s4W@ep-odd-mouse-aipwv85v-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true\" POSTGRES_URL_NON_POOLING=\"postgresql://neondb_owner:npg_dBLNcJAX2s4W@ep-odd-mouse-aipwv85v.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import PortieSchuif from "@/components/PortieSchuif";
+import Sterrenbeoordeling from "@/components/Sterrenbeoordeling";
 
 export async function generateStaticParams() {
   const recepten = await prisma.recept.findMany({ select: { slug: true } });
@@ -88,12 +89,9 @@ export default async function ReceptPagina({
               <span>{recept.bereidingstijd} minuten</span>
             )}
             {recept.porties && <span>{recept.porties} porties</span>}
-            {recept.beoordeling && (
-              <span className="text-terracotta-500">
-                {"★".repeat(recept.beoordeling)}
-                {"☆".repeat(5 - recept.beoordeling)}
-              </span>
-            )}
+          </div>
+          <div className="mt-3">
+            <Sterrenbeoordeling slug={recept.slug} beoordeling={recept.beoordeling} />
           </div>
           {/* Tags */}
           {recept.tags.length > 0 && (

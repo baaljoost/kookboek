@@ -1,16 +1,9 @@
-import { isAuthenticated } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { categorieLabels } from "@/lib/categorieLabels";
 import Link from "next/link";
 import VerwijderKnop from "@/components/admin/VerwijderKnop";
-import UitlogKnop from "@/components/admin/UitlogKnop";
 
 export default async function AdminReceptenPage() {
-  if (!(await isAuthenticated())) {
-    redirect("/admin");
-  }
-
   const recepten = await prisma.recept.findMany({
     orderBy: { createdAt: "desc" },
     include: { fotos: { take: 1, orderBy: { volgorde: "asc" } } },
@@ -32,7 +25,6 @@ export default async function AdminReceptenPage() {
             <Link href="/admin/recepten/nieuw" className="btn-primary">
               + Nieuw recept
             </Link>
-            <UitlogKnop />
           </div>
         </div>
       </header>

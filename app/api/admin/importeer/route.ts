@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
 
 interface JsonLdIngredient {
   recipeIngredient?: string[];
@@ -135,10 +134,6 @@ function vindJsonLd(html: string): JsonLdRecipe | null {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 });
-  }
-
   const { url } = await request.json();
 
   if (!url) {

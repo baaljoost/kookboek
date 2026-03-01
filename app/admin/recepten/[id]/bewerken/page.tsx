@@ -1,5 +1,4 @@
-import { isAuthenticated } from "@/lib/auth";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import ReceptFormulier from "@/components/admin/ReceptFormulier";
@@ -10,10 +9,6 @@ export default async function BewerkReceptPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  if (!(await isAuthenticated())) {
-    redirect("/admin");
-  }
-
   const { id } = await params;
   const recept = await prisma.recept.findUnique({
     where: { id: parseInt(id) },

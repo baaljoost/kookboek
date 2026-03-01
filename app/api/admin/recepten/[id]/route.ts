@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Categorie } from "@prisma/client";
 
@@ -26,10 +25,6 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 });
-  }
-
   const { id } = await params;
   const receptId = parseInt(id);
   const body: ReceptPayload = await request.json();
@@ -99,10 +94,6 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 });
-  }
-
   const { id } = await params;
   await prisma.recept.delete({ where: { id: parseInt(id) } });
   return NextResponse.json({ ok: true });
