@@ -392,7 +392,14 @@ export async function POST(request: NextRequest) {
 
   const ingredienten = (recept.recipeIngredient ?? []).map(parseIngredient);
   const stappen = parseInstructies(recept.recipeInstructions);
-  const fotoUrl = extractFotoUrl(recept);
+
+  // Foto: JSON-LD image veld, anders og:image als fallback
+  let fotoUrl = extractFotoUrl(recept);
+  if (!fotoUrl) {
+    const ogMatch = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i)
+      || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/i);
+    fotoUrl = ogMatch ? ogMatch[1] : null;
+  }
 
   return NextResponse.json({
     titel: recept.name ?? "",
