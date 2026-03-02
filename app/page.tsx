@@ -37,6 +37,13 @@ export default async function HomePage({
     orderBy: { createdAt: "desc" },
   });
 
+  // Recepten met foto's eerst, daarna zonder foto
+  recepten.sort((a, b) => {
+    const aHeeftFoto = a.fotos.length > 0 ? 0 : 1;
+    const bHeeftFoto = b.fotos.length > 0 ? 0 : 1;
+    return aHeeftFoto - bHeeftFoto;
+  });
+
   const alleTags = await prisma.tag.findMany({ orderBy: { naam: "asc" } });
   const categorieen = Object.values(Categorie);
 
