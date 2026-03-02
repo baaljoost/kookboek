@@ -255,7 +255,7 @@ export default async function HomePage({
         className="fixed bottom-6 right-6 bg-olive-700 text-white px-5 py-3 shadow-lg hover:bg-olive-800 transition-colors text-sm font-medium flex items-center gap-2 z-50"
       >
         <span className="text-lg leading-none">+</span>
-        {isBeheerder ? "Recept toevoegen" : "Recept voorstellen"}
+        {isBeheerder ? "Recept toevoegen" : "Stuur een recept in!"}
       </Link>
     </div>
   );
