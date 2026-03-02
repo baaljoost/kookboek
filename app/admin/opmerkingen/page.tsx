@@ -1,22 +1,30 @@
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
+import { MODUS_COOKIE, MODUS_BEHEERDER } from "@/lib/modus";
 import Link from "next/link";
 import VerwijderOpmerkingKnop from "@/components/VerwijderOpmerkingKnop";
+import AdminNav from "@/components/admin/AdminNav";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminOpmerkingenPage() {
-  const opmerkingen = await prisma.opmerking.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { recept: { select: { titel: true, slug: true } } },
-  });
+  const [opmerkingen, aantalVoorgesteld, cookieStore] = await Promise.all([
+    prisma.opmerking.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { recept: { select: { titel: true, slug: true } } },
+    }),
+    prisma.voorgesteldRecept.count({ where: { status: "WACHT" } }),
+    cookies(),
+  ]);
+  const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
 
   return (
     <div className="min-h-screen bg-cream-50">
-      <header className="border-b border-neutral-200 bg-white">
+      <header className="bg-white border-b border-neutral-200">
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
-            <Link href="/admin/recepten" className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors">
-              ← Recepten beheren
+            <Link href="/" className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors">
+              ← Naar het kookboek
             </Link>
             <h1 className="font-serif text-2xl text-neutral-900 mt-1">
               Opmerkingen
@@ -24,6 +32,7 @@ export default async function AdminOpmerkingenPage() {
           </div>
           <span className="text-sm text-neutral-400">{opmerkingen.length} totaal</span>
         </div>
+        <AdminNav isBeheerder={isBeheerder} aantalVoorgesteld={aantalVoorgesteld} />
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">

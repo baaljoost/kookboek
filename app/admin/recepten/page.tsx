@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { MODUS_COOKIE, MODUS_BEHEERDER } from "@/lib/modus";
 import Link from "next/link";
 import VerwijderKnop from "@/components/admin/VerwijderKnop";
-import AdminHeader from "@/components/admin/AdminHeader";
+import AdminNav from "@/components/admin/AdminNav";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,7 @@ export default async function AdminReceptenPage() {
 
   return (
     <div className="min-h-screen bg-cream-50">
-      <header className="border-b border-neutral-200 bg-white">
+      <header className="bg-white border-b border-neutral-200">
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
             <Link href="/" className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors">
@@ -31,27 +31,11 @@ export default async function AdminReceptenPage() {
               Recepten beheren
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/admin/voorstellen" className="text-xs text-neutral-400 hover:text-neutral-700 transition-colors relative">
-              Voorstellen
-              {aantalVoorgesteld > 0 && (
-                <span className="ml-1 bg-terracotta-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">
-                  {aantalVoorgesteld}
-                </span>
-              )}
-            </Link>
-            <Link href="/admin/opmerkingen" className="text-xs text-neutral-400 hover:text-neutral-700 transition-colors">
-              Opmerkingen
-            </Link>
-            <Link href="/admin/recepten/nieuw" className="btn-primary">
-              + Nieuw recept
-            </Link>
-          </div>
+          <Link href="/admin/recepten/nieuw" className="btn-primary">
+            + Nieuw recept
+          </Link>
         </div>
-        {/* Toggle + uitloggen */}
-        <div className="max-w-4xl mx-auto px-6 pb-3 flex justify-end">
-          <AdminHeader isBeheerder={isBeheerder} />
-        </div>
+        <AdminNav isBeheerder={isBeheerder} aantalVoorgesteld={aantalVoorgesteld} />
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">

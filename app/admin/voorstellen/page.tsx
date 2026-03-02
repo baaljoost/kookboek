@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
+import { MODUS_COOKIE, MODUS_BEHEERDER } from "@/lib/modus";
 import Link from "next/link";
 import VoorstelActies from "@/components/admin/VoorstelActies";
+import AdminNav from "@/components/admin/AdminNav";
 
 export const dynamic = "force-dynamic";
 
@@ -11,24 +14,25 @@ interface ReceptData {
 }
 
 export default async function AdminVoorstellenPage() {
-  const voorstellen = await prisma.voorgesteldRecept.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const [voorstellen, cookieStore] = await Promise.all([
+    prisma.voorgesteldRecept.findMany({ orderBy: { createdAt: "desc" } }),
+    cookies(),
+  ]);
+  const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
+  const aantalVoorgesteld = voorstellen.filter((v) => v.status === "WACHT").length;
 
   return (
     <div className="min-h-screen bg-cream-50">
-      <header className="border-b border-neutral-200 bg-white">
+      <header className="bg-white border-b border-neutral-200">
         <div className="max-w-4xl mx-auto px-6 py-5">
-          <Link
-            href="/admin/recepten"
-            className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors"
-          >
-            ← Recepten beheren
+          <Link href="/" className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors">
+            ← Naar het kookboek
           </Link>
           <h1 className="font-serif text-2xl text-neutral-900 mt-1">
             Voorgestelde recepten
           </h1>
         </div>
+        <AdminNav isBeheerder={isBeheerder} aantalVoorgesteld={aantalVoorgesteld} />
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">

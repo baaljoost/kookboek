@@ -23,6 +23,7 @@ interface FormData {
   bereidingstijd: string;
   herkomstNaam: string;
   herkomstUrl: string;
+  fotoUrl: string;
   ingredienten: Ingredient[];
   stappen: Stap[];
 }
@@ -43,6 +44,8 @@ export default function VoorstelFormulier() {
   const [importUrl, setImportUrl] = useState("");
   const [importBezig, setImportBezig] = useState(false);
   const [importFout, setImportFout] = useState("");
+  const [fotoBezig, setFotoBezig] = useState(false);
+  const [fotoFout, setFotoFout] = useState("");
 
   async function handleImport() {
     if (!importUrl.trim()) return;
@@ -70,6 +73,7 @@ export default function VoorstelFormulier() {
       bereidingstijd: data.bereidingstijd ? String(data.bereidingstijd) : prev.bereidingstijd,
       herkomstNaam: data.herkomstNaam || prev.herkomstNaam,
       herkomstUrl: data.herkomstUrl || prev.herkomstUrl,
+      fotoUrl: data.fotoUrl || prev.fotoUrl,
       ingredienten: data.ingredienten?.length ? data.ingredienten : prev.ingredienten,
       stappen: data.stappen?.length ? data.stappen : prev.stappen,
     }));
@@ -84,9 +88,28 @@ export default function VoorstelFormulier() {
     bereidingstijd: "",
     herkomstNaam: "",
     herkomstUrl: "",
+    fotoUrl: "",
     ingredienten: [leegIngredient()],
     stappen: [legeStap()],
   });
+
+  async function handleFotoUpload(bestand: File) {
+    setFotoBezig(true);
+    setFotoFout("");
+    const fd = new FormData();
+    fd.append("bestand", bestand);
+    const res = await fetch("/api/recepten/voorstellen/foto", {
+      method: "POST",
+      body: fd,
+    });
+    if (res.ok) {
+      const { url } = await res.json();
+      setVeld("fotoUrl", url);
+    } else {
+      setFotoFout("Foto uploaden mislukt");
+    }
+    setFotoBezig(false);
+  }
 
   function setVeld<K extends keyof FormData>(veld: K, waarde: FormData[K]) {
     setFormData((prev) => ({ ...prev, [veld]: waarde }));
@@ -367,6 +390,51 @@ export default function VoorstelFormulier() {
           >
             + Stap toevoegen
           </button>
+        </section>
+
+        {/* Foto */}
+        <section>
+          <h2 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
+            Foto (optioneel)
+          </h2>
+          {formData.fotoUrl ? (
+            <div className="flex items-start gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={formData.fotoUrl}
+                alt="Recept foto"
+                className="w-32 h-32 object-cover bg-neutral-100"
+              />
+              <button
+                type="button"
+                onClick={() => setVeld("fotoUrl", "")}
+                className="text-xs text-neutral-400 hover:text-red-500 transition-colors"
+              >
+                Verwijderen
+              </button>
+            </div>
+          ) : (
+            <div>
+              <label className="flex flex-col items-start gap-2 cursor-pointer">
+                <span className="text-xs text-neutral-400">
+                  Voeg een foto toe van het gerecht
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const bestand = e.target.files?.[0];
+                    if (bestand) handleFotoUpload(bestand);
+                  }}
+                />
+                <span className="btn-secondary text-xs">
+                  {fotoBezig ? "Uploaden…" : "Foto kiezen"}
+                </span>
+              </label>
+              {fotoFout && <p className="text-red-600 text-xs mt-2">{fotoFout}</p>}
+            </div>
+          )}
         </section>
 
         {fout && <p className="text-red-600 text-sm">{fout}</p>}
