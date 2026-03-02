@@ -10,6 +10,7 @@ interface SearchParams {
   categorie?: string;
   q?: string;
   ingebracht?: string;
+  sorteer?: string;
 }
 
 export default async function HomePage({
@@ -18,7 +19,8 @@ export default async function HomePage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const { categorie, q, ingebracht } = params;
+  const { categorie, q, ingebracht, sorteer } = params;
+  const opSterren = sorteer === "sterren";
 
   const cookieStore = await cookies();
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
@@ -42,14 +44,28 @@ export default async function HomePage({
     orderBy: { createdAt: "desc" },
   });
 
-  // Recepten met foto's eerst, daarna zonder foto
-  recepten.sort((a, b) => {
-    const aHeeftFoto = a.fotos.length > 0 ? 0 : 1;
-    const bHeeftFoto = b.fotos.length > 0 ? 0 : 1;
-    return aHeeftFoto - bHeeftFoto;
-  });
+  // Sorteren
+  if (opSterren) {
+    recepten.sort((a, b) => (b.beoordeling ?? 0) - (a.beoordeling ?? 0));
+  } else {
+    // Standaard: recepten met foto's eerst
+    recepten.sort((a, b) => {
+      const aHeeftFoto = a.fotos.length > 0 ? 0 : 1;
+      const bHeeftFoto = b.fotos.length > 0 ? 0 : 1;
+      return aHeeftFoto - bHeeftFoto;
+    });
+  }
 
   const categorieen = Object.values(Categorie);
+
+  function maakUrl(wijzigingen: Record<string, string | undefined>) {
+    const huidig: Record<string, string | undefined> = { categorie, q, ingebracht, sorteer };
+    const nieuw = { ...huidig, ...wijzigingen };
+    const parts = Object.entries(nieuw)
+      .filter(([, v]) => v !== undefined && v !== "")
+      .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`);
+    return parts.length ? `/?${parts.join("&")}` : "/";
+  }
 
   return (
     <div className="min-h-screen bg-cream-50">
@@ -108,31 +124,43 @@ export default async function HomePage({
           </div>
         )}
 
-        {/* Categoriefilter */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Link
-            href="/"
-            className={`px-3 py-1 text-xs uppercase tracking-widest border transition-colors ${
-              !categorie
-                ? "bg-olive-700 text-white border-olive-700"
-                : "border-neutral-300 text-neutral-600 hover:border-olive-600"
-            }`}
-          >
-            Alles
-          </Link>
-          {categorieen.map((cat) => (
+        {/* Categoriefilter + sorteer */}
+        <div className="flex flex-wrap gap-2 mb-4 items-center justify-between">
+          <div className="flex flex-wrap gap-2">
             <Link
-              key={cat}
-              href={`/?categorie=${cat}${q ? `&q=${q}` : ""}`}
+              href={maakUrl({ categorie: undefined })}
               className={`px-3 py-1 text-xs uppercase tracking-widest border transition-colors ${
-                categorie === cat
+                !categorie
                   ? "bg-olive-700 text-white border-olive-700"
                   : "border-neutral-300 text-neutral-600 hover:border-olive-600"
               }`}
             >
-              {categorieLabels[cat]}
+              Alles
             </Link>
-          ))}
+            {categorieen.map((cat) => (
+              <Link
+                key={cat}
+                href={maakUrl({ categorie: cat })}
+                className={`px-3 py-1 text-xs uppercase tracking-widest border transition-colors ${
+                  categorie === cat
+                    ? "bg-olive-700 text-white border-olive-700"
+                    : "border-neutral-300 text-neutral-600 hover:border-olive-600"
+                }`}
+              >
+                {categorieLabels[cat]}
+              </Link>
+            ))}
+          </div>
+          <Link
+            href={maakUrl({ sorteer: opSterren ? undefined : "sterren" })}
+            className={`text-xs px-3 py-1 border transition-colors whitespace-nowrap ${
+              opSterren
+                ? "bg-olive-700 text-white border-olive-700"
+                : "border-neutral-300 text-neutral-600 hover:border-olive-600"
+            }`}
+          >
+            ★ Op reviewscore
+          </Link>
         </div>
 
 
