@@ -6,6 +6,7 @@ import { MODUS_COOKIE, MODUS_BEHEERDER } from "@/lib/modus";
 import Link from "next/link";
 import Image from "next/image";
 import SorteerMenu from "@/components/SorteerMenu";
+import IngebrachtMenu from "@/components/IngebrachtMenu";
 
 interface SearchParams {
   categorie?: string;
@@ -25,24 +26,49 @@ export default async function HomePage({
   const cookieStore = await cookies();
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
 
-  const recepten = await prisma.recept.findMany({
-    where: {
-      ...(categorie && { categorie: categorie as Categorie }),
-      ...(q && {
-        ingredienten: {
-          some: { naam: { contains: q, mode: "insensitive" } },
-        },
-      }),
-      ...(ingebracht && {
-        ingebrachtDoor: ingebracht === "Joost" ? null : ingebracht,
-      }),
-    },
-    include: {
-      fotos: { orderBy: { volgorde: "asc" }, take: 1 },
-      _count: { select: { opmerkingen: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  // Ingebracht-filter: komma-gescheiden namen
+  const ingebrachtNamen = ingebracht
+    ? ingebracht.split(",").map((n) => n.trim()).filter(Boolean)
+    : [];
+
+  // Bouw OR-filter: null = Joost, anders naam
+  const ingebrachtFilter =
+    ingebrachtNamen.length > 0
+      ? {
+          OR: ingebrachtNamen.map((naam) => ({
+            ingebrachtDoor: naam === "Joost" ? null : naam,
+          })),
+        }
+      : {};
+
+  const [recepten, inbrengersRaw] = await Promise.all([
+    prisma.recept.findMany({
+      where: {
+        ...(categorie && { categorie: categorie as Categorie }),
+        ...(q && {
+          ingredienten: {
+            some: { naam: { contains: q, mode: "insensitive" } },
+          },
+        }),
+        ...ingebrachtFilter,
+      },
+      include: {
+        fotos: { orderBy: { volgorde: "asc" }, take: 1 },
+        _count: { select: { opmerkingen: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    // Alle unieke ingebracht-namen met telling (voor het dropdown menu)
+    prisma.recept.groupBy({
+      by: ["ingebrachtDoor"],
+      _count: { id: true },
+    }),
+  ]);
+
+  // Zet null → "Joost" en sorteer alfabetisch
+  const inbrengers = inbrengersRaw
+    .map((r) => ({ naam: r.ingebrachtDoor ?? "Joost", aantal: r._count.id }))
+    .sort((a, b) => a.naam.localeCompare(b.naam, "nl"));
 
   // Sorteren
   if (sorteer === "sterren-hoog") {
@@ -114,13 +140,14 @@ export default async function HomePage({
         </form>
 
         {/* Filter op ingebracht door */}
-        {ingebracht && (
+        {ingebrachtNamen.length > 0 && (
           <div className="mb-6 flex items-center gap-3">
             <p className="text-sm text-neutral-600">
-              Recepten van <span className="font-medium">{ingebracht}</span>
+              Recepten van{" "}
+              <span className="font-medium">{ingebrachtNamen.join(", ")}</span>
             </p>
             <Link
-              href="/"
+              href={maakUrl({ ingebracht: undefined })}
               className="text-xs text-neutral-400 hover:text-neutral-700 transition-colors"
             >
               × Wis filter
@@ -155,10 +182,17 @@ export default async function HomePage({
               </Link>
             ))}
           </div>
-          <SorteerMenu
-            huidigeSorteer={sorteer}
-            huidigeParams={{ categorie, q, ingebracht }}
-          />
+          <div className="flex items-center gap-4">
+            <IngebrachtMenu
+              inbrengers={inbrengers}
+              actieveNamen={ingebrachtNamen}
+              huidigeParams={{ categorie, q, sorteer }}
+            />
+            <SorteerMenu
+              huidigeSorteer={sorteer}
+              huidigeParams={{ categorie, q, ingebracht }}
+            />
+          </div>
         </div>
 
 
