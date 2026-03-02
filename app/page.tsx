@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { categorieLabels } from "@/lib/categorieLabels";
 import { Categorie } from "@prisma/client";
+import { cookies } from "next/headers";
+import { MODUS_COOKIE, MODUS_BEHEERDER } from "@/lib/modus";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -16,6 +18,9 @@ export default async function HomePage({
 }) {
   const params = await searchParams;
   const { categorie, q } = params;
+
+  const cookieStore = await cookies();
+  const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
 
   const recepten = await prisma.recept.findMany({
     where: {
@@ -182,13 +187,13 @@ export default async function HomePage({
         )}
       </div>
 
-      {/* Floating knop: recept toevoegen */}
+      {/* Floating knop */}
       <Link
-        href="/admin/recepten/nieuw"
+        href={isBeheerder ? "/admin/recepten/nieuw" : "/recepten/voorstellen"}
         className="fixed bottom-6 right-6 bg-olive-700 text-white px-5 py-3 shadow-lg hover:bg-olive-800 transition-colors text-sm font-medium flex items-center gap-2 z-50"
       >
         <span className="text-lg leading-none">+</span>
-        Recept toevoegen
+        {isBeheerder ? "Recept toevoegen" : "Recept voorstellen"}
       </Link>
     </div>
   );

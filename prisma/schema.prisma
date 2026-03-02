@@ -82,6 +82,21 @@ model ReceptTag {
   @@id([receptId, tagId])
 }
 
+model VoorgesteldRecept {
+  id          Int            @id @default(autoincrement())
+  naam        String
+  bericht     String
+  receptData  Json
+  status      VoorstelStatus @default(WACHT)
+  createdAt   DateTime       @default(now())
+}
+
+enum VoorstelStatus {
+  WACHT
+  GOEDGEKEURD
+  AFGEWEZEN
+}
+
 enum Categorie {
   PASTA
   CURRY

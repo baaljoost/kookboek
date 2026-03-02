@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { categorieLabels } from "@/lib/categorieLabels";
+import { cookies } from "next/headers";
+import { MODUS_COOKIE, MODUS_BEHEERDER } from "@/lib/modus";
 import Link from "next/link";
 import VerwijderKnop from "@/components/admin/VerwijderKnop";
+import AdminHeader from "@/components/admin/AdminHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +13,11 @@ export default async function AdminReceptenPage() {
     orderBy: { createdAt: "desc" },
     include: { fotos: { take: 1, orderBy: { volgorde: "asc" } } },
   });
+
+  const aantalVoorgesteld = await prisma.voorgesteldRecept.count({ where: { status: "WACHT" } });
+
+  const cookieStore = await cookies();
+  const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
 
   return (
     <div className="min-h-screen bg-cream-50">
@@ -24,6 +32,14 @@ export default async function AdminReceptenPage() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/admin/voorstellen" className="text-xs text-neutral-400 hover:text-neutral-700 transition-colors relative">
+              Voorstellen
+              {aantalVoorgesteld > 0 && (
+                <span className="ml-1 bg-terracotta-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">
+                  {aantalVoorgesteld}
+                </span>
+              )}
+            </Link>
             <Link href="/admin/opmerkingen" className="text-xs text-neutral-400 hover:text-neutral-700 transition-colors">
               Opmerkingen
             </Link>
@@ -31,6 +47,10 @@ export default async function AdminReceptenPage() {
               + Nieuw recept
             </Link>
           </div>
+        </div>
+        {/* Toggle + uitloggen */}
+        <div className="max-w-4xl mx-auto px-6 pb-3 flex justify-end">
+          <AdminHeader isBeheerder={isBeheerder} />
         </div>
       </header>
 
