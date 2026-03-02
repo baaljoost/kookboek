@@ -114,7 +114,7 @@ export default async function HomePage({
           <div>
             <Link href="/">
               <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-neutral-900 tracking-tight hover:text-olive-700 transition-colors">
-                Het Kookboek van Joost
+                Het Kookboek van {ingebrachtNamen.length === 1 ? ingebrachtNamen[0] : "Joost"}
               </h1>
             </Link>
             <p className="mt-1 text-neutral-500 font-sans text-sm tracking-wide">
