@@ -7,6 +7,7 @@ import PortieSchuif from "@/components/PortieSchuif";
 import Sterrenbeoordeling from "@/components/Sterrenbeoordeling";
 import FotoBewerken from "@/components/FotoBewerken";
 import VerwijderReceptKnop from "@/components/VerwijderReceptKnop";
+import OpmerkingFormulier from "@/components/OpmerkingFormulier";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ export default async function ReceptPagina({
       stappen: { orderBy: { volgorde: "asc" } },
       fotos: { orderBy: { volgorde: "asc" } },
       tags: { include: { tag: true } },
+      opmerkingen: { orderBy: { createdAt: "asc" } },
     },
   });
 
@@ -203,6 +205,49 @@ export default async function ReceptPagina({
                 )}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Opmerkingen */}
+        <div className="mt-16 pt-10 border-t border-neutral-200">
+          <h2 className="font-serif text-2xl text-neutral-900 mb-8">Opmerkingen</h2>
+
+          {/* Bestaande opmerkingen */}
+          {recept.opmerkingen.length > 0 && (
+            <div className="space-y-8 mb-12">
+              {recept.opmerkingen.map((o) => (
+                <div key={o.id} className="flex gap-4">
+                  <div className="w-9 h-9 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-500 font-medium text-sm shrink-0">
+                    {o.naam[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-baseline gap-3 mb-1">
+                      <span className="font-medium text-neutral-900 text-sm">{o.naam}</span>
+                      {o.sterren && (
+                        <span className="text-amber-400 text-xs">{"★".repeat(o.sterren)}{"☆".repeat(5 - o.sterren)}</span>
+                      )}
+                      <span className="text-neutral-400 text-xs">
+                        {o.createdAt.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}
+                      </span>
+                    </div>
+                    <p className="text-neutral-700 text-sm leading-relaxed">{o.bericht}</p>
+                    {o.fotoUrl && (
+                      <div className="mt-3 w-40 h-40 overflow-hidden bg-neutral-100">
+                        <Image src={o.fotoUrl} alt={`Foto van ${o.naam}`} width={160} height={160} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Formulier */}
+          <div>
+            <h3 className="font-serif text-lg text-neutral-900 mb-5">
+              {recept.opmerkingen.length === 0 ? "Wees de eerste die een opmerking plaatst" : "Opmerking toevoegen"}
+            </h3>
+            <OpmerkingFormulier slug={recept.slug} />
           </div>
         </div>
       </main>

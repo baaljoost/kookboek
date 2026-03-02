@@ -25,6 +25,7 @@ model Recept {
   stappen         Stap[]
   fotos           Foto[]
   tags            ReceptTag[]
+  opmerkingen     Opmerking[]
 }
 
 model Ingredient {
@@ -53,6 +54,17 @@ model Foto {
   altTekst String?
   receptId Int
   recept   Recept @relation(fields: [receptId], references: [id], onDelete: Cascade)
+}
+
+model Opmerking {
+  id        Int      @id @default(autoincrement())
+  naam      String
+  bericht   String
+  sterren   Int?     // 1-5, optioneel
+  fotoUrl   String?  // optioneel
+  receptId  Int
+  recept    Recept   @relation(fields: [receptId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 model Tag {
