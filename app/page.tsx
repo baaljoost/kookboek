@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { MODUS_COOKIE, MODUS_BEHEERDER } from "@/lib/modus";
 import Link from "next/link";
 import Image from "next/image";
+import SorteerMenu from "@/components/SorteerMenu";
 
 interface SearchParams {
   categorie?: string;
@@ -20,7 +21,6 @@ export default async function HomePage({
 }) {
   const params = await searchParams;
   const { categorie, q, ingebracht, sorteer } = params;
-  const opSterren = sorteer === "sterren";
 
   const cookieStore = await cookies();
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
@@ -45,10 +45,14 @@ export default async function HomePage({
   });
 
   // Sorteren
-  if (opSterren) {
+  if (sorteer === "sterren-hoog") {
     recepten.sort((a, b) => (b.beoordeling ?? 0) - (a.beoordeling ?? 0));
+  } else if (sorteer === "sterren-laag") {
+    recepten.sort((a, b) => (a.beoordeling ?? 6) - (b.beoordeling ?? 6));
+  } else if (sorteer === "az") {
+    recepten.sort((a, b) => a.titel.localeCompare(b.titel, "nl"));
   } else {
-    // Standaard: recepten met foto's eerst
+    // Standaard (nieuwste eerst): recepten met foto's eerst
     recepten.sort((a, b) => {
       const aHeeftFoto = a.fotos.length > 0 ? 0 : 1;
       const bHeeftFoto = b.fotos.length > 0 ? 0 : 1;
@@ -151,16 +155,10 @@ export default async function HomePage({
               </Link>
             ))}
           </div>
-          <Link
-            href={maakUrl({ sorteer: opSterren ? undefined : "sterren" })}
-            className={`text-xs px-3 py-1 border transition-colors whitespace-nowrap ${
-              opSterren
-                ? "bg-olive-700 text-white border-olive-700"
-                : "border-neutral-300 text-neutral-600 hover:border-olive-600"
-            }`}
-          >
-            ★ Op reviewscore
-          </Link>
+          <SorteerMenu
+            huidigeSorteer={sorteer}
+            huidigeParams={{ categorie, q, ingebracht }}
+          />
         </div>
 
 
