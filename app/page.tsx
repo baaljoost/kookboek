@@ -44,13 +44,21 @@ export default async function HomePage({
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <h1 className="font-serif text-4xl md:text-5xl text-neutral-900 tracking-tight">
-            Het Kookboek van Joost
-          </h1>
-          <p className="mt-1 text-neutral-500 font-sans text-sm tracking-wide">
-            {recepten.length} recepten
-          </p>
+        <div className="max-w-6xl mx-auto px-6 py-8 flex items-start justify-between">
+          <div>
+            <h1 className="font-serif text-4xl md:text-5xl text-neutral-900 tracking-tight">
+              Het Kookboek van Joost
+            </h1>
+            <p className="mt-1 text-neutral-500 font-sans text-sm tracking-wide">
+              {recepten.length} recepten
+            </p>
+          </div>
+          <Link
+            href="/admin"
+            className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors mt-2"
+          >
+            Admin
+          </Link>
         </div>
       </header>
 
