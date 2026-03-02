@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import SorteerMenu from "@/components/SorteerMenu";
 import IngebrachtMenu from "@/components/IngebrachtMenu";
+import CategorieFilter from "@/components/CategorieFilter";
 
 interface SearchParams {
   categorie?: string;
@@ -86,8 +87,6 @@ export default async function HomePage({
     });
   }
 
-  const categorieen = Object.values(Categorie);
-
   function maakUrl(wijzigingen: Record<string, string | undefined>) {
     const huidig: Record<string, string | undefined> = { categorie, q, ingebracht, sorteer };
     const nieuw = { ...huidig, ...wijzigingen };
@@ -97,15 +96,27 @@ export default async function HomePage({
     return parts.length ? `/?${parts.join("&")}` : "/";
   }
 
+  const categorieItems = [
+    { waarde: undefined, label: "Alles", href: maakUrl({ categorie: undefined }), actief: !categorie },
+    ...Object.values(Categorie).map((cat) => ({
+      waarde: cat,
+      label: categorieLabels[cat],
+      href: maakUrl({ categorie: cat }),
+      actief: categorie === cat,
+    })),
+  ];
+
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white">
         <div className="max-w-6xl mx-auto px-6 py-8 flex items-start justify-between">
           <div>
-            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-neutral-900 tracking-tight">
-              Het Kookboek van Joost
-            </h1>
+            <Link href="/">
+              <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-neutral-900 tracking-tight hover:text-olive-700 transition-colors">
+                Het Kookboek van Joost
+              </h1>
+            </Link>
             <p className="mt-1 text-neutral-500 font-sans text-sm tracking-wide">
               {recepten.length} recepten
             </p>
@@ -149,44 +160,22 @@ export default async function HomePage({
           </div>
         )}
 
-        {/* Categoriefilter + sorteer */}
-        <div className="flex flex-wrap gap-2 mb-4 items-center justify-between">
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={maakUrl({ categorie: undefined })}
-              className={`px-3 py-1 text-xs uppercase tracking-widest border transition-colors ${
-                !categorie
-                  ? "bg-olive-700 text-white border-olive-700"
-                  : "border-neutral-300 text-neutral-600 hover:border-olive-600"
-              }`}
-            >
-              Alles
-            </Link>
-            {categorieen.map((cat) => (
-              <Link
-                key={cat}
-                href={maakUrl({ categorie: cat })}
-                className={`px-3 py-1 text-xs uppercase tracking-widest border transition-colors ${
-                  categorie === cat
-                    ? "bg-olive-700 text-white border-olive-700"
-                    : "border-neutral-300 text-neutral-600 hover:border-olive-600"
-                }`}
-              >
-                {categorieLabels[cat]}
-              </Link>
-            ))}
-          </div>
-          <div className="flex items-center gap-4">
-            <IngebrachtMenu
-              inbrengers={inbrengers}
-              actieveNamen={ingebrachtNamen}
-              huidigeParams={{ categorie, q, sorteer }}
-            />
-            <SorteerMenu
-              huidigeSorteer={sorteer}
-              huidigeParams={{ categorie, q, ingebracht }}
-            />
-          </div>
+        {/* Categoriefilter */}
+        <div className="mb-4">
+          <CategorieFilter categorieen={categorieItems} />
+        </div>
+
+        {/* Sorteer + ingebracht */}
+        <div className="flex justify-end gap-4 mb-6">
+          <IngebrachtMenu
+            inbrengers={inbrengers}
+            actieveNamen={ingebrachtNamen}
+            huidigeParams={{ categorie, q, sorteer }}
+          />
+          <SorteerMenu
+            huidigeSorteer={sorteer}
+            huidigeParams={{ categorie, q, ingebracht }}
+          />
         </div>
 
 
