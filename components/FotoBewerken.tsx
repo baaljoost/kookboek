@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import FotoEditor from "./FotoEditor";
 
 interface Foto {
   id: number;
@@ -24,6 +25,7 @@ export default function FotoBewerken({ receptId, fotos, receptTitel }: Props) {
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const [bewerkFoto, setBewerkFoto] = useState<Foto | null>(null);
 
   async function uploadBestand(file: File) {
     setBezig(true);
@@ -90,6 +92,21 @@ export default function FotoBewerken({ receptId, fotos, receptTitel }: Props) {
         </svg>
       </button>
 
+      {/* Foto-editor */}
+      {bewerkFoto && (
+        <FotoEditor
+          fotoUrl={bewerkFoto.url}
+          fotoId={bewerkFoto.id}
+          receptId={receptId}
+          altTekst={bewerkFoto.altTekst ?? receptTitel}
+          onSluiten={() => setBewerkFoto(null)}
+          onOpgeslagen={() => {
+            setBewerkFoto(null);
+            router.refresh();
+          }}
+        />
+      )}
+
       {/* Modal */}
       {open && (
         <div
@@ -112,6 +129,17 @@ export default function FotoBewerken({ receptId, fotos, receptTitel }: Props) {
                       <div className="w-20 h-20 overflow-hidden bg-neutral-100">
                         <Image src={foto.url} alt={foto.altTekst ?? ""} width={80} height={80} className="w-full h-full object-cover" />
                       </div>
+                      {/* Bewerk-overlay */}
+                      <button
+                        type="button"
+                        onClick={() => setBewerkFoto(foto)}
+                        className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+                        title="Foto bewerken"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="white" className="w-6 h-6">
+                          <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                        </svg>
+                      </button>
                       <button
                         type="button"
                         onClick={() => verwijderFoto(foto.id)}
