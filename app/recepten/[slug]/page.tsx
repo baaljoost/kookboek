@@ -8,6 +8,7 @@ import Sterrenbeoordeling from "@/components/Sterrenbeoordeling";
 import FotoBewerken from "@/components/FotoBewerken";
 import VerwijderReceptKnop from "@/components/VerwijderReceptKnop";
 import OpmerkingFormulier from "@/components/OpmerkingFormulier";
+import VerwijderOpmerkingKnop from "@/components/VerwijderOpmerkingKnop";
 
 export const dynamic = "force-dynamic";
 
@@ -229,6 +230,7 @@ export default async function ReceptPagina({
                       <span className="text-neutral-400 text-xs">
                         {o.createdAt.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}
                       </span>
+                      <VerwijderOpmerkingKnop slug={recept.slug} opmerkingId={o.id} />
                     </div>
                     <p className="text-neutral-700 text-sm leading-relaxed">{o.bericht}</p>
                     {o.fotoUrl && (

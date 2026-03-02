@@ -42,3 +42,17 @@ export async function POST(
 
   return NextResponse.json(opmerking, { status: 201 });
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
+  const { opmerkingId } = await request.json();
+
+  const recept = await prisma.recept.findUnique({ where: { slug }, select: { id: true } });
+  if (!recept) return NextResponse.json({ error: "Recept niet gevonden" }, { status: 404 });
+
+  await prisma.opmerking.delete({ where: { id: opmerkingId, receptId: recept.id } });
+  return NextResponse.json({ ok: true });
+}
