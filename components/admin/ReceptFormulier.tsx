@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Categorie } from "@prisma/client";
 import { categorieLabels } from "@/lib/categorieLabels";
@@ -58,7 +58,6 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
   const router = useRouter();
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState("");
-  const [uploadBezig, setUploadBezig] = useState(false);
   const [importUrl, setImportUrl] = useState("");
   const [importBezig, setImportBezig] = useState(false);
   const [importFout, setImportFout] = useState("");
@@ -159,31 +158,6 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
     if (j < 0 || j >= nieuw.length) return;
     [nieuw[i], nieuw[j]] = [nieuw[j], nieuw[i]];
     setVeld("stappen", nieuw);
-  }
-
-  // Foto upload
-  const uploadFoto = useCallback(async (file: File) => {
-    setUploadBezig(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch("/api/admin/fotos", { method: "POST", body: fd });
-    const data = await res.json();
-    setUploadBezig(false);
-    return data.url as string;
-  }, []);
-
-  async function handleFotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    const resterend = 5 - formData.fotos.length;
-    const teUploaden = files.slice(0, resterend);
-    for (const file of teUploaden) {
-      const url = await uploadFoto(file);
-      setFormData((prev) => ({
-        ...prev,
-        fotos: [...prev.fotos, { url, altTekst: "" }],
-      }));
-    }
-    e.target.value = "";
   }
 
   function verwijderFoto(i: number) {
@@ -492,46 +466,29 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
         </button>
       </section>
 
-      {/* Foto's */}
-      <section>
-        <h2 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
-          Foto&apos;s ({formData.fotos.length}/5)
-        </h2>
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          {formData.fotos.map((foto, i) => (
-            <div key={i} className="relative aspect-square bg-neutral-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={foto.url}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => verwijderFoto(i)}
-                className="absolute top-1 right-1 bg-black/50 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-black/70"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-        {formData.fotos.length < 5 && (
-          <label className="cursor-pointer">
-            <span className={`btn-secondary inline-block ${uploadBezig ? "opacity-50" : ""}`}>
-              {uploadBezig ? "Uploaden…" : "Foto uploaden"}
-            </span>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleFotoUpload}
-              disabled={uploadBezig}
-              className="sr-only"
-            />
-          </label>
-        )}
-      </section>
+      {/* Foto's (alleen tonen als er al foto's zijn via import) */}
+      {formData.fotos.length > 0 && (
+        <section>
+          <h2 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
+            Foto&apos;s ({formData.fotos.length})
+          </h2>
+          <div className="grid grid-cols-3 gap-3">
+            {formData.fotos.map((foto, i) => (
+              <div key={i} className="relative aspect-square bg-neutral-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={foto.url} alt="" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => verwijderFoto(i)}
+                  className="absolute top-1 right-1 bg-black/50 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-black/70"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {fout && <p className="text-red-600 text-sm">{fout}</p>}
 

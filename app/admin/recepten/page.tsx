@@ -24,6 +24,9 @@ export default async function AdminReceptenPage() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/admin/opmerkingen" className="text-xs text-neutral-400 hover:text-neutral-700 transition-colors">
+              Opmerkingen
+            </Link>
             <Link href="/admin/recepten/nieuw" className="btn-primary">
               + Nieuw recept
             </Link>
