@@ -225,7 +225,7 @@ export default async function ReceptPagina({
                     <div className="flex items-baseline gap-3 mb-1">
                       <span className="font-medium text-neutral-900 text-sm">{o.naam}</span>
                       {o.sterren && (
-                        <span className="text-amber-400 text-xs">{"★".repeat(o.sterren)}{"☆".repeat(5 - o.sterren)}</span>
+                        <span className="text-amber-400 text-xs">{"★".repeat(o.sterren)}</span>
                       )}
                       <span className="text-neutral-400 text-xs">
                         {o.createdAt.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}
