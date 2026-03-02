@@ -90,7 +90,7 @@ export default function VoorstellenPopup({ receptData, onSluiten }: Props) {
                   disabled={bezig || !naam.trim()}
                   className="btn-primary disabled:opacity-50"
                 >
-                  {bezig ? "Versturen…" : "Voorstel versturen"}
+                  {bezig ? "Versturen…" : "Recept versturen"}
                 </button>
                 <button
                   type="button"

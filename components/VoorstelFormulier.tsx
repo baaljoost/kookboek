@@ -176,7 +176,7 @@ export default function VoorstelFormulier() {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-10">
+      <form id="voorstel-form" onSubmit={handleSubmit} className="space-y-10">
         {/* URL Import */}
         <section className="bg-cream-100 border border-neutral-200 p-5">
           <h2 className="font-serif text-xl text-neutral-900 mb-1">
@@ -439,12 +439,26 @@ export default function VoorstelFormulier() {
 
         {fout && <p className="text-red-600 text-sm">{fout}</p>}
 
-        <div className="flex gap-3 pt-4 border-t border-neutral-100">
-          <button type="submit" className="btn-primary">
-            Doorgaan →
-          </button>
-        </div>
+        {/* Ruimte zodat de sticky knop de content niet overlapt */}
+        <div className="h-20" />
       </form>
+
+      {/* Sticky floating knop */}
+      <div className="fixed bottom-6 right-6 z-40">
+        {fout && (
+          <p className="text-red-600 text-xs mb-2 text-right bg-white px-3 py-1 shadow">
+            {fout}
+          </p>
+        )}
+        <button
+          type="submit"
+          form="voorstel-form"
+          className="bg-olive-700 text-white px-5 py-3 shadow-lg hover:bg-olive-800 transition-colors text-sm font-medium flex items-center gap-2"
+        >
+          <span className="text-lg leading-none">→</span>
+          Doorgaan
+        </button>
+      </div>
 
       {popupOpen && receptData && (
         <VoorstellenPopup
