@@ -40,6 +40,42 @@ export default function VoorstelFormulier() {
   const [popupOpen, setPopupOpen] = useState(false);
   const [receptData, setReceptData] = useState<object | null>(null);
   const [fout, setFout] = useState("");
+  const [importUrl, setImportUrl] = useState("");
+  const [importBezig, setImportBezig] = useState(false);
+  const [importFout, setImportFout] = useState("");
+
+  async function handleImport() {
+    if (!importUrl.trim()) return;
+    setImportBezig(true);
+    setImportFout("");
+
+    const res = await fetch("/api/admin/importeer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: importUrl.trim() }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setImportFout(data.error ?? "Importeren mislukt");
+      setImportBezig(false);
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      titel: data.titel || prev.titel,
+      porties: data.porties ? String(data.porties) : prev.porties,
+      bereidingstijd: data.bereidingstijd ? String(data.bereidingstijd) : prev.bereidingstijd,
+      herkomstNaam: data.herkomstNaam || prev.herkomstNaam,
+      herkomstUrl: data.herkomstUrl || prev.herkomstUrl,
+      ingredienten: data.ingredienten?.length ? data.ingredienten : prev.ingredienten,
+      stappen: data.stappen?.length ? data.stappen : prev.stappen,
+    }));
+
+    setImportBezig(false);
+  }
 
   const [formData, setFormData] = useState<FormData>({
     titel: "",
@@ -118,6 +154,36 @@ export default function VoorstelFormulier() {
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-10">
+        {/* URL Import */}
+        <section className="bg-cream-100 border border-neutral-200 p-5">
+          <h2 className="font-serif text-xl text-neutral-900 mb-1">
+            Importeer van website
+          </h2>
+          <p className="text-xs text-neutral-400 mb-3">
+            Plak een URL van een receptwebsite. Het recept wordt automatisch ingevuld.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={importUrl}
+              onChange={(e) => setImportUrl(e.target.value)}
+              placeholder="https://www.allerhande.nl/recept/..."
+              className="input flex-1"
+            />
+            <button
+              type="button"
+              onClick={handleImport}
+              disabled={importBezig || !importUrl.trim()}
+              className="btn-primary whitespace-nowrap disabled:opacity-50"
+            >
+              {importBezig ? "Importeren…" : "Importeer"}
+            </button>
+          </div>
+          {importFout && (
+            <p className="text-red-600 text-xs mt-2">{importFout}</p>
+          )}
+        </section>
+
         {/* Basisinfo */}
         <section>
           <h2 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">

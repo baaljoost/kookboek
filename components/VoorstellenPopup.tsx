@@ -43,7 +43,7 @@ export default function VoorstellenPopup({ receptData, onSluiten }: Props) {
               Bedankt!
             </p>
             <p className="text-neutral-500 text-sm mb-6">
-              Je recept is verstuurd. De beheerder zal het beoordelen.
+              Joost is blij met je recept en gaat ernaar kijken!
             </p>
             <button
               onClick={onSluiten}

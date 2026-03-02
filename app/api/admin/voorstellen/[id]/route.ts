@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAuthenticated } from "@/lib/auth";
 import { maakSlug } from "@/lib/slug";
 
 interface Ingredient {
@@ -34,14 +33,11 @@ async function uniekeSlug(basis: string): Promise<string> {
   return slug;
 }
 
+// POST = goedkeuren: maak echt recept aan
 export async function POST(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
-  }
-
   const { id } = await params;
   const voorstelId = parseInt(id);
 
@@ -76,7 +72,10 @@ export async function POST(
             receptId: recept.id,
             volgorde: i,
             naam: ing.naam,
-            hoeveelheid: ing.hoeveelheid != null ? parseFloat(String(ing.hoeveelheid)) || null : null,
+            hoeveelheid:
+              ing.hoeveelheid != null
+                ? parseFloat(String(ing.hoeveelheid)) || null
+                : null,
             eenheid: ing.eenheid ?? null,
             notitie: ing.notitie ?? null,
           })),
@@ -93,10 +92,7 @@ export async function POST(
         });
       }
 
-      await tx.voorgesteldRecept.update({
-        where: { id: voorstelId },
-        data: { status: "GOEDGEKEURD" },
-      });
+      await tx.voorgesteldRecept.delete({ where: { id: voorstelId } });
     });
 
     return NextResponse.json({ ok: true });
@@ -106,20 +102,16 @@ export async function POST(
   }
 }
 
+// DELETE = afwijzen: verwijder het voorstel
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
-  }
-
   const { id } = await params;
 
   try {
-    await prisma.voorgesteldRecept.update({
+    await prisma.voorgesteldRecept.delete({
       where: { id: parseInt(id) },
-      data: { status: "AFGEWEZEN" },
     });
 
     return NextResponse.json({ ok: true });
