@@ -56,7 +56,7 @@ export default function SorteerMenu({ huidigeSorteer, huidigeParams }: Props) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-1 w-48 bg-white border border-neutral-200 shadow-lg z-20">
+        <div className="absolute left-0 mt-1 w-48 bg-white border border-neutral-200 shadow-lg z-20">
           {opties.map((optie) => (
             <button
               key={optie.waarde}

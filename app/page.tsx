@@ -166,7 +166,7 @@ export default async function HomePage({
         </div>
 
         {/* Sorteer + ingebracht */}
-        <div className="flex justify-end gap-4 mb-6">
+        <div className="flex justify-start gap-4 mb-6">
           <IngebrachtMenu
             inbrengers={inbrengers}
             actieveNamen={ingebrachtNamen}

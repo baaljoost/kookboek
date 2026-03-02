@@ -71,7 +71,7 @@ export default function IngebrachtMenu({ inbrengers, actieveNamen, huidigeParams
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-1 w-56 bg-white border border-neutral-200 shadow-lg z-20">
+        <div className="absolute left-0 mt-1 w-56 bg-white border border-neutral-200 shadow-lg z-20">
           {inbrengers.map((inbrenger) => {
             const isActief = geselecteerd.includes(inbrenger.naam);
             return (
