@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-export const MODUS_COOKIE = "kookboek_modus";
-export const MODUS_BEHEERDER = "beheerder";
+import { MODUS_COOKIE, MODUS_BEHEERDER } from "@/lib/modus";
 
 export async function POST(request: NextRequest) {
   const { aan } = await request.json();
