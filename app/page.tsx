@@ -9,6 +9,7 @@ import Image from "next/image";
 interface SearchParams {
   categorie?: string;
   q?: string;
+  ingebracht?: string;
 }
 
 export default async function HomePage({
@@ -17,7 +18,7 @@ export default async function HomePage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const { categorie, q } = params;
+  const { categorie, q, ingebracht } = params;
 
   const cookieStore = await cookies();
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
@@ -25,10 +26,13 @@ export default async function HomePage({
   const recepten = await prisma.recept.findMany({
     where: {
       ...(categorie && { categorie: categorie as Categorie }),
-...(q && {
+      ...(q && {
         ingredienten: {
           some: { naam: { contains: q, mode: "insensitive" } },
         },
+      }),
+      ...(ingebracht && {
+        ingebrachtDoor: ingebracht === "Joost" ? null : ingebracht,
       }),
     },
     include: {
@@ -88,6 +92,21 @@ export default async function HomePage({
             </button>
           </div>
         </form>
+
+        {/* Filter op ingebracht door */}
+        {ingebracht && (
+          <div className="mb-6 flex items-center gap-3">
+            <p className="text-sm text-neutral-600">
+              Recepten van <span className="font-medium">{ingebracht}</span>
+            </p>
+            <Link
+              href="/"
+              className="text-xs text-neutral-400 hover:text-neutral-700 transition-colors"
+            >
+              × Wis filter
+            </Link>
+          </div>
+        )}
 
         {/* Categoriefilter */}
         <div className="flex flex-wrap gap-2 mb-4">

@@ -111,9 +111,14 @@ export default async function ReceptPagina({
           <div className="mt-3">
             <Sterrenbeoordeling slug={recept.slug} beoordeling={recept.beoordeling} />
           </div>
-          <p className="text-xs text-neutral-400 mt-2">
+          <p className="text-sm text-neutral-400 mt-2">
             Ingebracht door{" "}
-            <span className="text-neutral-500">{recept.ingebrachtDoor ?? "Joost"}</span>
+            <Link
+              href={`/?ingebracht=${encodeURIComponent(recept.ingebrachtDoor ?? "Joost")}`}
+              className="text-neutral-600 hover:text-olive-700 transition-colors"
+            >
+              {recept.ingebrachtDoor ?? "Joost"}
+            </Link>
           </p>
           {/* Tags */}
           {recept.tags.length > 0 && (
