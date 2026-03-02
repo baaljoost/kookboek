@@ -6,7 +6,6 @@ import Image from "next/image";
 
 interface SearchParams {
   categorie?: string;
-  tag?: string;
   q?: string;
 }
 
@@ -16,15 +15,12 @@ export default async function HomePage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const { categorie, tag, q } = params;
+  const { categorie, q } = params;
 
   const recepten = await prisma.recept.findMany({
     where: {
       ...(categorie && { categorie: categorie as Categorie }),
-      ...(tag && {
-        tags: { some: { tag: { naam: tag } } },
-      }),
-      ...(q && {
+...(q && {
         ingredienten: {
           some: { naam: { contains: q, mode: "insensitive" } },
         },
@@ -32,7 +28,6 @@ export default async function HomePage({
     },
     include: {
       fotos: { orderBy: { volgorde: "asc" }, take: 1 },
-      tags: { include: { tag: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -44,7 +39,6 @@ export default async function HomePage({
     return aHeeftFoto - bHeeftFoto;
   });
 
-  const alleTags = await prisma.tag.findMany({ orderBy: { naam: "asc" } });
   const categorieen = Object.values(Categorie);
 
   return (
@@ -83,7 +77,6 @@ export default async function HomePage({
             {categorie && (
               <input type="hidden" name="categorie" value={categorie} />
             )}
-            {tag && <input type="hidden" name="tag" value={tag} />}
             <button type="submit" className="btn-primary whitespace-nowrap">
               Zoeken
             </button>
@@ -105,7 +98,7 @@ export default async function HomePage({
           {categorieen.map((cat) => (
             <Link
               key={cat}
-              href={`/?categorie=${cat}${tag ? `&tag=${tag}` : ""}${q ? `&q=${q}` : ""}`}
+              href={`/?categorie=${cat}${q ? `&q=${q}` : ""}`}
               className={`px-3 py-1 text-xs uppercase tracking-widest border transition-colors ${
                 categorie === cat
                   ? "bg-olive-700 text-white border-olive-700"
@@ -117,24 +110,6 @@ export default async function HomePage({
           ))}
         </div>
 
-        {/* Tagfilter */}
-        {alleTags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-10">
-            {alleTags.map((t) => (
-              <Link
-                key={t.id}
-                href={`/?tag=${t.naam}${categorie ? `&categorie=${categorie}` : ""}${q ? `&q=${q}` : ""}`}
-                className={`px-2.5 py-0.5 text-xs border rounded-full transition-colors ${
-                  tag === t.naam
-                    ? "bg-terracotta-500 text-white border-terracotta-500"
-                    : "border-neutral-300 text-neutral-500 hover:border-terracotta-400"
-                }`}
-              >
-                {t.naam}
-              </Link>
-            ))}
-          </div>
-        )}
 
         {/* Receptenraster */}
         {recepten.length === 0 ? (

@@ -132,7 +132,7 @@ export default function FotoBewerken({ receptId, fotos, receptTitel }: Props) {
                       {/* Bewerk-overlay */}
                       <button
                         type="button"
-                        onClick={() => setBewerkFoto(foto)}
+                        onClick={() => { setBewerkFoto(foto); setOpen(false); }}
                         className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity"
                         title="Foto bewerken"
                       >
