@@ -18,6 +18,7 @@ model Recept {
   beoordeling     Int?          // 1-5
   herkomstNaam    String?
   herkomstUrl     String?
+  ingebrachtDoor  String?       // null = Joost, anders naam indiener voorstel
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

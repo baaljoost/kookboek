@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 interface ReceptData {
   titel?: string;
+  fotoUrl?: string;
   ingredienten?: { naam: string; hoeveelheid?: string; eenheid?: string }[];
   stappen?: { tekst: string }[];
 }
@@ -48,7 +49,15 @@ export default async function AdminVoorstellenPage() {
                   className="bg-white border border-neutral-200 p-6"
                 >
                   <div className="flex items-start justify-between gap-4 mb-4">
-                    <div>
+                    {data.fotoUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={data.fotoUrl}
+                        alt={data.titel ?? ""}
+                        className="w-20 h-20 object-cover shrink-0 bg-neutral-100"
+                      />
+                    )}
+                    <div className="flex-1">
                       <h3 className="font-serif text-lg text-neutral-900">
                         {data.titel ?? "Zonder titel"}
                       </h3>

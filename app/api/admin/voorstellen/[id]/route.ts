@@ -20,6 +20,7 @@ interface ReceptData {
   bereidingstijd?: number | null;
   herkomstNaam?: string;
   herkomstUrl?: string;
+  fotoUrl?: string;
   ingredienten?: Ingredient[];
   stappen?: Stap[];
 }
@@ -63,6 +64,10 @@ export async function POST(
           bereidingstijd: data.bereidingstijd ?? null,
           herkomstNaam: data.herkomstNaam ?? null,
           herkomstUrl: data.herkomstUrl ?? null,
+          ingebrachtDoor: voorstel.naam,
+          fotos: data.fotoUrl
+            ? { create: [{ volgorde: 0, url: data.fotoUrl, altTekst: data.titel }] }
+            : undefined,
         },
       });
 
