@@ -9,7 +9,7 @@ import SorteerMenu from "@/components/SorteerMenu";
 import IngebrachtMenu from "@/components/IngebrachtMenu";
 import CategorieFilter from "@/components/CategorieFilter";
 import DieetMenu from "@/components/DieetMenu";
-import { vegetarischFilter, veganFilter } from "@/lib/dieetFilter";
+import { isVegetarisch, isVegan } from "@/lib/dieetFilter";
 
 interface SearchParams {
   categorie?: string;
@@ -45,12 +45,7 @@ export default async function HomePage({
         }
       : {};
 
-  const dieetWhere =
-    dieet === "vegetarisch" ? vegetarischFilter()
-    : dieet === "vegan" ? veganFilter()
-    : {};
-
-  const [recepten, inbrengersRaw] = await Promise.all([
+  const [alleRecepten, inbrengersRaw] = await Promise.all([
     prisma.recept.findMany({
       where: {
         ...(categorie && { categorie: categorie as Categorie }),
@@ -60,20 +55,27 @@ export default async function HomePage({
           },
         }),
         ...ingebrachtFilter,
-        ...dieetWhere,
       },
       include: {
         fotos: { orderBy: { volgorde: "asc" }, take: 1 },
         _count: { select: { opmerkingen: true } },
+        // Ingrediënten meeladen voor dieet-detectie
+        ingredienten: { select: { naam: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
-    // Alle unieke ingebracht-namen met telling (voor het dropdown menu)
     prisma.recept.groupBy({
       by: ["ingebrachtDoor"],
       _count: { id: true },
     }),
   ]);
+
+  // Dieetfilter in TypeScript met woordgrens-matching
+  const recepten = dieet === "vegetarisch"
+    ? alleRecepten.filter((r) => isVegetarisch(r.ingredienten))
+    : dieet === "vegan"
+    ? alleRecepten.filter((r) => isVegan(r.ingredienten))
+    : alleRecepten;
 
   // Zet null → "Joost" en sorteer alfabetisch
   const inbrengers = inbrengersRaw
@@ -186,13 +188,13 @@ export default async function HomePage({
             actieveNamen={ingebrachtNamen}
             huidigeParams={{ categorie, q, sorteer, dieet }}
           />
-          <DieetMenu
-            actieveFilter={dieet}
-            huidigeParams={{ categorie, q, ingebracht, sorteer }}
-          />
           <SorteerMenu
             huidigeSorteer={sorteer}
             huidigeParams={{ categorie, q, ingebracht, dieet }}
+          />
+          <DieetMenu
+            actieveFilter={dieet}
+            huidigeParams={{ categorie, q, ingebracht, sorteer }}
           />
         </div>
 

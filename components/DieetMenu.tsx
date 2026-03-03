@@ -52,9 +52,9 @@ export default function DieetMenu({ actieveFilter, huidigeParams }: Props) {
           actief ? "text-olive-700 font-medium" : "text-neutral-600 hover:text-neutral-900"
         }`}
       >
-        {/* Blad icoon */}
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+        {/* Blaadje icoon */}
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-13 6 1-1.5 2.25-2.83 4-4z"/>
         </svg>
         {actief ? actief.label : "Vega/vegan"}
       </button>
