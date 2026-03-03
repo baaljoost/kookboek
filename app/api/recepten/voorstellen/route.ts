@@ -97,7 +97,7 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, slug });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Er ging iets mis" }, { status: 500 });
