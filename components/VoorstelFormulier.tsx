@@ -225,228 +225,231 @@ export default function VoorstelFormulier() {
           </button>
 
           {basisInfoOpen && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="md:col-span-2">
-                <label className="label">Titel *</label>
-                <input
-                  type="text"
-                  value={formData.titel}
-                  onChange={(e) => setVeld("titel", e.target.value)}
-                  className="input"
-                  required
-                />
-              </div>
-              <div>
-                <label className="label">Categorie *</label>
-                <select
-                  value={formData.categorie}
-                  onChange={(e) => setVeld("categorie", e.target.value as Categorie)}
-                  className="input"
-                >
-                  {Object.values(Categorie).map((cat) => (
-                    <option key={cat} value={cat}>
-                      {categorieLabels[cat]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="label">Porties</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.porties}
-                  onChange={(e) => setVeld("porties", e.target.value)}
-                  className="input"
-                  placeholder="4"
-                />
-              </div>
-              <div>
-                <label className="label">Bereidingstijd (minuten)</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.bereidingstijd}
-                  onChange={(e) => setVeld("bereidingstijd", e.target.value)}
-                  className="input"
-                  placeholder="30"
-                />
-              </div>
-              <div>
-                <label className="label">Bron / herkomst</label>
-                <input
-                  type="text"
-                  value={formData.herkomstNaam}
-                  onChange={(e) => setVeld("herkomstNaam", e.target.value)}
-                  className="input"
-                  placeholder="Bijv. kookboek of website"
-                />
-              </div>
-              <div>
-                <label className="label">URL (optioneel)</label>
-                <input
-                  type="url"
-                  value={formData.herkomstUrl}
-                  onChange={(e) => setVeld("herkomstUrl", e.target.value)}
-                  className="input"
-                  placeholder="https://…"
-                />
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Ingrediënten */}
-        <section>
-          <h2 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
-            Ingrediënten
-          </h2>
-          <div className="space-y-2">
-            {formData.ingredienten.map((ing, i) => (
-              <div key={i} className="flex gap-2 items-start">
-                <input
-                  type="text"
-                  value={ing.hoeveelheid}
-                  onChange={(e) => updateIngredient(i, "hoeveelheid", e.target.value)}
-                  className="input w-20 shrink-0"
-                  placeholder="200"
-                />
-                <input
-                  type="text"
-                  value={ing.eenheid}
-                  onChange={(e) => updateIngredient(i, "eenheid", e.target.value)}
-                  className="input w-20 shrink-0"
-                  placeholder="gram"
-                />
-                <input
-                  type="text"
-                  value={ing.naam}
-                  onChange={(e) => updateIngredient(i, "naam", e.target.value)}
-                  className="input flex-1"
-                  placeholder="knoflookteentjes"
-                />
-                <input
-                  type="text"
-                  value={ing.notitie}
-                  onChange={(e) => updateIngredient(i, "notitie", e.target.value)}
-                  className="input flex-1"
-                  placeholder="fijngehakt (optioneel)"
-                />
-                <button
-                  type="button"
-                  onClick={() => verwijderIngredient(i)}
-                  className="text-neutral-300 hover:text-red-400 transition-colors mt-2 shrink-0"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={voegIngredientToe}
-            className="mt-3 text-sm text-olive-700 hover:underline"
-          >
-            + Ingrediënt toevoegen
-          </button>
-        </section>
-
-        {/* Stappen */}
-        <section>
-          <h2 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
-            Bereiding
-          </h2>
-          <div className="space-y-3">
-            {formData.stappen.map((stap, i) => (
-              <div key={i} className="flex gap-2 items-start">
-                <span className="font-serif text-2xl text-neutral-200 mt-1 w-6 shrink-0 text-center select-none">
-                  {i + 1}
-                </span>
-                <textarea
-                  value={stap.tekst}
-                  onChange={(e) => updateStap(i, e.target.value)}
-                  className="input flex-1 resize-none"
-                  rows={2}
-                  placeholder="Beschrijf deze stap…"
-                />
-                <div className="flex flex-col gap-1 shrink-0 mt-1">
-                  <button
-                    type="button"
-                    onClick={() => verplaatsStap(i, -1)}
-                    disabled={i === 0}
-                    className="text-neutral-300 hover:text-neutral-600 disabled:opacity-20 text-xs"
+            <div className="space-y-10 mt-4">
+              {/* Basisvelden */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="label">Titel *</label>
+                  <input
+                    type="text"
+                    value={formData.titel}
+                    onChange={(e) => setVeld("titel", e.target.value)}
+                    className="input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">Categorie *</label>
+                  <select
+                    value={formData.categorie}
+                    onChange={(e) => setVeld("categorie", e.target.value as Categorie)}
+                    className="input"
                   >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => verplaatsStap(i, 1)}
-                    disabled={i === formData.stappen.length - 1}
-                    className="text-neutral-300 hover:text-neutral-600 disabled:opacity-20 text-xs"
-                  >
-                    ▼
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => verwijderStap(i)}
-                    className="text-neutral-300 hover:text-red-400 transition-colors text-xs"
-                  >
-                    ✕
-                  </button>
+                    {Object.values(Categorie).map((cat) => (
+                      <option key={cat} value={cat}>
+                        {categorieLabels[cat]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Porties</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.porties}
+                    onChange={(e) => setVeld("porties", e.target.value)}
+                    className="input"
+                    placeholder="4"
+                  />
+                </div>
+                <div>
+                  <label className="label">Bereidingstijd (minuten)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.bereidingstijd}
+                    onChange={(e) => setVeld("bereidingstijd", e.target.value)}
+                    className="input"
+                    placeholder="30"
+                  />
+                </div>
+                <div>
+                  <label className="label">Bron / herkomst</label>
+                  <input
+                    type="text"
+                    value={formData.herkomstNaam}
+                    onChange={(e) => setVeld("herkomstNaam", e.target.value)}
+                    className="input"
+                    placeholder="Bijv. kookboek of website"
+                  />
+                </div>
+                <div>
+                  <label className="label">URL (optioneel)</label>
+                  <input
+                    type="url"
+                    value={formData.herkomstUrl}
+                    onChange={(e) => setVeld("herkomstUrl", e.target.value)}
+                    className="input"
+                    placeholder="https://…"
+                  />
                 </div>
               </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={voegStapToe}
-            className="mt-3 text-sm text-olive-700 hover:underline"
-          >
-            + Stap toevoegen
-          </button>
-        </section>
 
-        {/* Foto */}
-        <section>
-          <h2 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
-            Foto (optioneel)
-          </h2>
-          {formData.fotoUrl ? (
-            <div className="flex items-start gap-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={formData.fotoUrl}
-                alt="Recept foto"
-                className="w-32 h-32 object-cover bg-neutral-100"
-              />
-              <button
-                type="button"
-                onClick={() => setVeld("fotoUrl", "")}
-                className="text-xs text-neutral-400 hover:text-red-500 transition-colors"
-              >
-                Verwijderen
-              </button>
-            </div>
-          ) : (
-            <div>
-              <label className="flex flex-col items-start gap-2 cursor-pointer">
-                <span className="text-xs text-neutral-400">
-                  Voeg een foto toe van het gerecht
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const bestand = e.target.files?.[0];
-                    if (bestand) handleFotoUpload(bestand);
-                  }}
-                />
-                <span className="btn-secondary text-xs">
-                  {fotoBezig ? "Uploaden…" : "Foto kiezen"}
-                </span>
-              </label>
-              {fotoFout && <p className="text-red-600 text-xs mt-2">{fotoFout}</p>}
+              {/* Ingrediënten */}
+              <div>
+                <h3 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
+                  Ingrediënten
+                </h3>
+                <div className="space-y-2">
+                  {formData.ingredienten.map((ing, i) => (
+                    <div key={i} className="flex gap-2 items-start">
+                      <input
+                        type="text"
+                        value={ing.hoeveelheid}
+                        onChange={(e) => updateIngredient(i, "hoeveelheid", e.target.value)}
+                        className="input w-20 shrink-0"
+                        placeholder="200"
+                      />
+                      <input
+                        type="text"
+                        value={ing.eenheid}
+                        onChange={(e) => updateIngredient(i, "eenheid", e.target.value)}
+                        className="input w-20 shrink-0"
+                        placeholder="gram"
+                      />
+                      <input
+                        type="text"
+                        value={ing.naam}
+                        onChange={(e) => updateIngredient(i, "naam", e.target.value)}
+                        className="input flex-1"
+                        placeholder="knoflookteentjes"
+                      />
+                      <input
+                        type="text"
+                        value={ing.notitie}
+                        onChange={(e) => updateIngredient(i, "notitie", e.target.value)}
+                        className="input flex-1"
+                        placeholder="fijngehakt (optioneel)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => verwijderIngredient(i)}
+                        className="text-neutral-300 hover:text-red-400 transition-colors mt-2 shrink-0"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={voegIngredientToe}
+                  className="mt-3 text-sm text-olive-700 hover:underline"
+                >
+                  + Ingrediënt toevoegen
+                </button>
+              </div>
+
+              {/* Bereiding */}
+              <div>
+                <h3 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
+                  Bereiding
+                </h3>
+                <div className="space-y-3">
+                  {formData.stappen.map((stap, i) => (
+                    <div key={i} className="flex gap-2 items-start">
+                      <span className="font-serif text-2xl text-neutral-200 mt-1 w-6 shrink-0 text-center select-none">
+                        {i + 1}
+                      </span>
+                      <textarea
+                        value={stap.tekst}
+                        onChange={(e) => updateStap(i, e.target.value)}
+                        className="input flex-1 resize-none"
+                        rows={2}
+                        placeholder="Beschrijf deze stap…"
+                      />
+                      <div className="flex flex-col gap-1 shrink-0 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => verplaatsStap(i, -1)}
+                          disabled={i === 0}
+                          className="text-neutral-300 hover:text-neutral-600 disabled:opacity-20 text-xs"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => verplaatsStap(i, 1)}
+                          disabled={i === formData.stappen.length - 1}
+                          className="text-neutral-300 hover:text-neutral-600 disabled:opacity-20 text-xs"
+                        >
+                          ▼
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => verwijderStap(i)}
+                          className="text-neutral-300 hover:text-red-400 transition-colors text-xs"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={voegStapToe}
+                  className="mt-3 text-sm text-olive-700 hover:underline"
+                >
+                  + Stap toevoegen
+                </button>
+              </div>
+
+              {/* Foto */}
+              <div>
+                <h3 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
+                  Foto (optioneel)
+                </h3>
+                {formData.fotoUrl ? (
+                  <div className="flex items-start gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={formData.fotoUrl}
+                      alt="Recept foto"
+                      className="w-32 h-32 object-cover bg-neutral-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setVeld("fotoUrl", "")}
+                      className="text-xs text-neutral-400 hover:text-red-500 transition-colors"
+                    >
+                      Verwijderen
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="flex flex-col items-start gap-2 cursor-pointer">
+                      <span className="text-xs text-neutral-400">
+                        Voeg een foto toe van het gerecht
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const bestand = e.target.files?.[0];
+                          if (bestand) handleFotoUpload(bestand);
+                        }}
+                      />
+                      <span className="btn-secondary text-xs">
+                        {fotoBezig ? "Uploaden…" : "Foto kiezen"}
+                      </span>
+                    </label>
+                    {fotoFout && <p className="text-red-600 text-xs mt-2">{fotoFout}</p>}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </section>
