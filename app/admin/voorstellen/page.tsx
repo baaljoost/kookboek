@@ -7,20 +7,21 @@ import AdminNav from "@/components/admin/AdminNav";
 
 export const dynamic = "force-dynamic";
 
-interface ReceptData {
-  titel?: string;
-  fotoUrl?: string;
-  ingredienten?: { naam: string; hoeveelheid?: string; eenheid?: string }[];
-  stappen?: { tekst: string }[];
-}
-
 export default async function AdminVoorstellenPage() {
   const [voorstellen, cookieStore] = await Promise.all([
-    prisma.voorgesteldRecept.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.recept.findMany({
+      where: { goedgekeurd: false },
+      include: {
+        fotos: { orderBy: { volgorde: "asc" }, take: 1 },
+        ingredienten: { orderBy: { volgorde: "asc" } },
+        stappen: { orderBy: { volgorde: "asc" } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
     cookies(),
   ]);
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
-  const aantalVoorgesteld = voorstellen.filter((v) => v.status === "WACHT").length;
+  const aantalVoorgesteld = voorstellen.length;
 
   return (
     <div className="min-h-screen bg-cream-50">
@@ -41,91 +42,88 @@ export default async function AdminVoorstellenPage() {
           <p className="text-neutral-400 text-sm">Geen nieuwe voorstellen.</p>
         ) : (
           <div className="space-y-6">
-            {voorstellen.map((voorstel) => {
-              const data = voorstel.receptData as ReceptData;
-              return (
-                <div
-                  key={voorstel.id}
-                  className="bg-white border border-neutral-200 p-6"
-                >
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    {data.fotoUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={data.fotoUrl}
-                        alt={data.titel ?? ""}
-                        className="w-20 h-20 object-cover shrink-0 bg-neutral-100"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <h3 className="font-serif text-lg text-neutral-900">
-                        {data.titel ?? "Zonder titel"}
-                      </h3>
-                      <p className="text-xs text-neutral-400 mt-0.5">
-                        Voorgesteld door{" "}
-                        <span className="font-medium text-neutral-600">
-                          {voorstel.naam}
-                        </span>{" "}
-                        op{" "}
-                        {voorstel.createdAt.toLocaleDateString("nl-NL", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
+            {voorstellen.map((recept) => (
+              <div
+                key={recept.id}
+                className="bg-white border border-neutral-200 p-6"
+              >
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  {recept.fotos[0] && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={recept.fotos[0].url}
+                      alt={recept.titel}
+                      className="w-20 h-20 object-cover shrink-0 bg-neutral-100"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="font-serif text-lg text-neutral-900">
+                      {recept.titel}
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Voorgesteld door{" "}
+                      <span className="font-medium text-neutral-600">
+                        {recept.voorstelNaam ?? recept.ingebrachtDoor}
+                      </span>{" "}
+                      op{" "}
+                      {recept.createdAt.toLocaleDateString("nl-NL", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </p>
+                    {recept.voorstelBericht && (
+                      <p className="text-sm text-neutral-500 mt-2 italic">
+                        &ldquo;{recept.voorstelBericht}&rdquo;
                       </p>
-                      {voorstel.bericht && (
-                        <p className="text-sm text-neutral-500 mt-2 italic">
-                          &ldquo;{voorstel.bericht}&rdquo;
-                        </p>
-                      )}
-                    </div>
-                    <VoorstelActies id={voorstel.id} />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                    {data.ingredienten && data.ingredienten.length > 0 && (
-                      <div>
-                        <p className="text-xs uppercase tracking-widest text-neutral-400 mb-2">
-                          Ingrediënten ({data.ingredienten.length})
-                        </p>
-                        <ul className="space-y-0.5 text-neutral-700">
-                          {data.ingredienten.slice(0, 8).map((ing, i) => (
-                            <li key={i}>
-                              {ing.hoeveelheid} {ing.eenheid} {ing.naam}
-                            </li>
-                          ))}
-                          {data.ingredienten.length > 8 && (
-                            <li className="text-neutral-400">
-                              + {data.ingredienten.length - 8} meer…
-                            </li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-
-                    {data.stappen && data.stappen.length > 0 && (
-                      <div>
-                        <p className="text-xs uppercase tracking-widest text-neutral-400 mb-2">
-                          Bereiding ({data.stappen.length} stappen)
-                        </p>
-                        <ol className="space-y-1 text-neutral-700 list-decimal list-inside">
-                          {data.stappen.slice(0, 3).map((stap, i) => (
-                            <li key={i} className="line-clamp-2">
-                              {stap.tekst}
-                            </li>
-                          ))}
-                          {data.stappen.length > 3 && (
-                            <li className="text-neutral-400 list-none">
-                              + {data.stappen.length - 3} meer stappen…
-                            </li>
-                          )}
-                        </ol>
-                      </div>
                     )}
                   </div>
+                  <VoorstelActies id={recept.id} />
                 </div>
-              );
-            })}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                  {recept.ingredienten.length > 0 && (
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-neutral-400 mb-2">
+                        Ingredienten ({recept.ingredienten.length})
+                      </p>
+                      <ul className="space-y-0.5 text-neutral-700">
+                        {recept.ingredienten.slice(0, 8).map((ing) => (
+                          <li key={ing.id}>
+                            {ing.hoeveelheid} {ing.eenheid} {ing.naam}
+                          </li>
+                        ))}
+                        {recept.ingredienten.length > 8 && (
+                          <li className="text-neutral-400">
+                            + {recept.ingredienten.length - 8} meer...
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+
+                  {recept.stappen.length > 0 && (
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-neutral-400 mb-2">
+                        Bereiding ({recept.stappen.length} stappen)
+                      </p>
+                      <ol className="space-y-1 text-neutral-700 list-decimal list-inside">
+                        {recept.stappen.slice(0, 3).map((stap) => (
+                          <li key={stap.id} className="line-clamp-2">
+                            {stap.tekst}
+                          </li>
+                        ))}
+                        {recept.stappen.length > 3 && (
+                          <li className="text-neutral-400 list-none">
+                            + {recept.stappen.length - 3} meer stappen...
+                          </li>
+                        )}
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </main>

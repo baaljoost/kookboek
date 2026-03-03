@@ -19,6 +19,9 @@ model Recept {
   herkomstNaam    String?
   herkomstUrl     String?
   ingebrachtDoor  String?       // null = Joost, anders naam indiener voorstel
+  goedgekeurd     Boolean       @default(true) // false = wacht op goedkeuring
+  voorstelNaam    String?       // naam + bericht van indiener (alleen bij voorstellen)
+  voorstelBericht String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

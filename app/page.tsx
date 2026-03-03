@@ -220,9 +220,16 @@ export default async function HomePage({
                   )}
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-neutral-400 mb-1">
-                    {categorieLabels[recept.categorie]}
-                  </p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-xs uppercase tracking-widest text-neutral-400">
+                      {categorieLabels[recept.categorie]}
+                    </p>
+                    {!recept.goedgekeurd && (
+                      <span className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 border border-amber-200">
+                        in afwachting
+                      </span>
+                    )}
+                  </div>
                   <h2 className="font-serif text-xl text-neutral-900 group-hover:text-olive-700 transition-colors leading-snug">
                     {recept.titel}
                   </h2>
