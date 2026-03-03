@@ -120,6 +120,11 @@ export default async function ReceptPagina({
               {recept.ingebrachtDoor ?? "Joost"}
             </Link>
           </p>
+          {recept.voorstelBericht && (
+            <p className="text-sm text-neutral-400 mt-1 italic">
+              &ldquo;{recept.voorstelBericht}&rdquo;
+            </p>
+          )}
           {/* Tags */}
           {recept.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-4">
