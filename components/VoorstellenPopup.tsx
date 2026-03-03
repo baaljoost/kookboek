@@ -14,6 +14,7 @@ export default function VoorstellenPopup({ receptData, onSluiten }: Props) {
   const [bericht, setBericht] = useState("");
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState("");
+  const [slug, setSlug] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +29,7 @@ export default function VoorstellenPopup({ receptData, onSluiten }: Props) {
 
     if (res.ok) {
       const data = await res.json();
-      router.push(`/recepten/${data.slug}`);
+      setSlug(data.slug);
     } else {
       const data = await res.json();
       setFout(data.error ?? "Er ging iets mis");
@@ -36,9 +37,26 @@ export default function VoorstellenPopup({ receptData, onSluiten }: Props) {
     }
   }
 
+  function sluitEnNavigeer() {
+    if (slug) router.push(`/recepten/${slug}`);
+    else onSluiten();
+  }
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
       <div className="bg-white w-full max-w-md shadow-xl p-8">
+        {slug ? (
+          <div className="text-center py-4">
+            <p className="font-serif text-2xl text-neutral-900 mb-3">Bedankt!</p>
+            <p className="text-neutral-500 text-sm mb-6">
+              Joost is blij met je recept en gaat ernaar kijken!
+            </p>
+            <button onClick={sluitEnNavigeer} className="btn-primary">
+              Naar het recept
+            </button>
+          </div>
+        ) : (
+        <>
         <h2 className="font-serif text-2xl text-neutral-900 mb-2">
           Bijna klaar!
         </h2>
@@ -86,6 +104,8 @@ export default function VoorstellenPopup({ receptData, onSluiten }: Props) {
             </button>
           </div>
         </form>
+        </>
+        )}
       </div>
     </div>
   );
