@@ -3,6 +3,8 @@ import { categorieLabels } from "@/lib/categorieLabels";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { MODUS_COOKIE, MODUS_BEHEERDER } from "@/lib/modus";
 import PortieSchuif from "@/components/PortieSchuif";
 import Sterrenbeoordeling from "@/components/Sterrenbeoordeling";
 import FotoBewerken from "@/components/FotoBewerken";
@@ -23,6 +25,9 @@ export default async function ReceptPagina({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
+  const cookieStore = await cookies();
+  const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
 
   const recept = await prisma.recept.findUnique({
     where: { slug },
@@ -48,7 +53,7 @@ export default async function ReceptPagina({
           >
             ← Het Kookboek van Joost
           </Link>
-          <VerwijderReceptKnop id={recept.id} titel={recept.titel} />
+          {isBeheerder && <VerwijderReceptKnop id={recept.id} titel={recept.titel} />}
         </div>
       </header>
 
