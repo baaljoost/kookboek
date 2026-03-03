@@ -8,12 +8,15 @@ import Image from "next/image";
 import SorteerMenu from "@/components/SorteerMenu";
 import IngebrachtMenu from "@/components/IngebrachtMenu";
 import CategorieFilter from "@/components/CategorieFilter";
+import DieetMenu from "@/components/DieetMenu";
+import { vegetarischFilter, veganFilter } from "@/lib/dieetFilter";
 
 interface SearchParams {
   categorie?: string;
   q?: string;
   ingebracht?: string;
   sorteer?: string;
+  dieet?: string;
 }
 
 export default async function HomePage({
@@ -22,7 +25,7 @@ export default async function HomePage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const { categorie, q, ingebracht, sorteer } = params;
+  const { categorie, q, ingebracht, sorteer, dieet } = params;
 
   const cookieStore = await cookies();
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
@@ -42,6 +45,11 @@ export default async function HomePage({
         }
       : {};
 
+  const dieetWhere =
+    dieet === "vegetarisch" ? vegetarischFilter()
+    : dieet === "vegan" ? veganFilter()
+    : {};
+
   const [recepten, inbrengersRaw] = await Promise.all([
     prisma.recept.findMany({
       where: {
@@ -52,6 +60,7 @@ export default async function HomePage({
           },
         }),
         ...ingebrachtFilter,
+        ...dieetWhere,
       },
       include: {
         fotos: { orderBy: { volgorde: "asc" }, take: 1 },
@@ -88,7 +97,7 @@ export default async function HomePage({
   }
 
   function maakUrl(wijzigingen: Record<string, string | undefined>) {
-    const huidig: Record<string, string | undefined> = { categorie, q, ingebracht, sorteer };
+    const huidig: Record<string, string | undefined> = { categorie, q, ingebracht, sorteer, dieet };
     const nieuw = { ...huidig, ...wijzigingen };
     const parts = Object.entries(nieuw)
       .filter(([, v]) => v !== undefined && v !== "")
@@ -170,16 +179,20 @@ export default async function HomePage({
           <CategorieFilter categorieen={categorieItems} />
         </div>
 
-        {/* Sorteer + ingebracht */}
+        {/* Sorteer + ingebracht + dieet */}
         <div className="flex justify-start gap-4 mb-6">
           <IngebrachtMenu
             inbrengers={inbrengers}
             actieveNamen={ingebrachtNamen}
-            huidigeParams={{ categorie, q, sorteer }}
+            huidigeParams={{ categorie, q, sorteer, dieet }}
+          />
+          <DieetMenu
+            actieveFilter={dieet}
+            huidigeParams={{ categorie, q, ingebracht, sorteer }}
           />
           <SorteerMenu
             huidigeSorteer={sorteer}
-            huidigeParams={{ categorie, q, ingebracht }}
+            huidigeParams={{ categorie, q, ingebracht, dieet }}
           />
         </div>
 
