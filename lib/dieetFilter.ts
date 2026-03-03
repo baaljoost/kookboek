@@ -16,24 +16,25 @@ const VLEES_VIS_KEYWORDS = [
   // Overig vlees
   "eend", "duck", "kalkoen", "turkey", "carnitas", "hert", "konijn", "rabbit",
   "vlees", "meat",
-  // Vis — specifiek genoeg
+  // Vis & zeevruchten
   "zalmfilet", "zalm", "salmon",
   "tonijnfilet", "tonijn", "tuna",
   "sardine",
   "ansjovis", "anchovy", "anchovies",
   "makreel",
-  "garnaal", "shrimp", "prawn", "scampi",
+  "garnaal", "garnalen", "shrimp", "prawn", "scampi",
   "inktvis", "squid", "octopus",
-  "mossel", "mussel",
-  "kreeft", "lobster",
-  "krab", "crab",
+  "mossel", "mosselen", "mussel",
+  "clam", "clams",
+  "kreeft", "rivierkreeft",
+  "lobster", "krab", "krabben", "crab",
   "zeevruchten", "seafood",
   "tilapia", "kabeljauw", "cod", "haddock",
   "haring", "paling", "forel", "forellen", "snoek",
   "visfilet", "scholfilet", "schol",
-  // Generiek "vis" maar voorkom "viskoek" false negative — "vis" is genoeg
-  // want "viskoekjes" bevat wel degelijk het woord "vis"
   "viskoek", "visstick",
+  "fish sauce", "vissaus", "oestersaus", "oyster sauce",
+  "fish", // Fish Tacos, fish and chips etc. — Engels gerecht
   // Gevogelte
   "eendenborst", "kippenvleugel",
 ];

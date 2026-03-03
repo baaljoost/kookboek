@@ -46,6 +46,7 @@ export default function VoorstelFormulier() {
   const [importFout, setImportFout] = useState("");
   const [fotoBezig, setFotoBezig] = useState(false);
   const [fotoFout, setFotoFout] = useState("");
+  const [basisInfoOpen, setBasisInfoOpen] = useState(false);
 
   async function handleImport() {
     if (!importUrl.trim()) return;
@@ -79,6 +80,7 @@ export default function VoorstelFormulier() {
     }));
 
     setImportBezig(false);
+    setBasisInfoOpen(true);
   }
 
   const [formData, setFormData] = useState<FormData>({
@@ -207,79 +209,91 @@ export default function VoorstelFormulier() {
           )}
         </section>
 
-        {/* Basisinfo */}
+        {/* Basisinfo — inklapbaar */}
         <section>
-          <h2 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
-            Basisinfo
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="label">Titel *</label>
-              <input
-                type="text"
-                value={formData.titel}
-                onChange={(e) => setVeld("titel", e.target.value)}
-                className="input"
-                required
-              />
+          <button
+            type="button"
+            onClick={() => setBasisInfoOpen((v) => !v)}
+            className="w-full flex items-center justify-between pb-2 border-b border-neutral-100 group"
+          >
+            <h2 className="font-serif text-xl text-neutral-900">
+              Recept beschrijven
+            </h2>
+            <span className={`text-neutral-400 text-sm transition-transform duration-200 ${basisInfoOpen ? "rotate-180" : ""}`}>
+              ▼
+            </span>
+          </button>
+
+          {basisInfoOpen && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="md:col-span-2">
+                <label className="label">Titel *</label>
+                <input
+                  type="text"
+                  value={formData.titel}
+                  onChange={(e) => setVeld("titel", e.target.value)}
+                  className="input"
+                  required
+                />
+              </div>
+              <div>
+                <label className="label">Categorie *</label>
+                <select
+                  value={formData.categorie}
+                  onChange={(e) => setVeld("categorie", e.target.value as Categorie)}
+                  className="input"
+                >
+                  {Object.values(Categorie).map((cat) => (
+                    <option key={cat} value={cat}>
+                      {categorieLabels[cat]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Porties</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.porties}
+                  onChange={(e) => setVeld("porties", e.target.value)}
+                  className="input"
+                  placeholder="4"
+                />
+              </div>
+              <div>
+                <label className="label">Bereidingstijd (minuten)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.bereidingstijd}
+                  onChange={(e) => setVeld("bereidingstijd", e.target.value)}
+                  className="input"
+                  placeholder="30"
+                />
+              </div>
+              <div>
+                <label className="label">Bron / herkomst</label>
+                <input
+                  type="text"
+                  value={formData.herkomstNaam}
+                  onChange={(e) => setVeld("herkomstNaam", e.target.value)}
+                  className="input"
+                  placeholder="Bijv. kookboek of website"
+                />
+              </div>
+              <div>
+                <label className="label">URL (optioneel)</label>
+                <input
+                  type="url"
+                  value={formData.herkomstUrl}
+                  onChange={(e) => setVeld("herkomstUrl", e.target.value)}
+                  className="input"
+                  placeholder="https://…"
+                />
+              </div>
             </div>
-            <div>
-              <label className="label">Categorie *</label>
-              <select
-                value={formData.categorie}
-                onChange={(e) => setVeld("categorie", e.target.value as Categorie)}
-                className="input"
-              >
-                {Object.values(Categorie).map((cat) => (
-                  <option key={cat} value={cat}>
-                    {categorieLabels[cat]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Porties</label>
-              <input
-                type="number"
-                min="1"
-                value={formData.porties}
-                onChange={(e) => setVeld("porties", e.target.value)}
-                className="input"
-                placeholder="4"
-              />
-            </div>
-            <div>
-              <label className="label">Bereidingstijd (minuten)</label>
-              <input
-                type="number"
-                min="1"
-                value={formData.bereidingstijd}
-                onChange={(e) => setVeld("bereidingstijd", e.target.value)}
-                className="input"
-                placeholder="30"
-              />
-            </div>
-            <div>
-              <label className="label">Bron / herkomst</label>
-              <input
-                type="text"
-                value={formData.herkomstNaam}
-                onChange={(e) => setVeld("herkomstNaam", e.target.value)}
-                className="input"
-                placeholder="Bijv. kookboek of website"
-              />
-            </div>
-            <div>
-              <label className="label">URL (optioneel)</label>
-              <input
-                type="url"
-                value={formData.herkomstUrl}
-                onChange={(e) => setVeld("herkomstUrl", e.target.value)}
-                className="input"
-                placeholder="https://…"
-              />
-            </div>
-          </div>
+          )}
         </section>
 
         {/* Ingrediënten */}
