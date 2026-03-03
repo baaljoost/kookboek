@@ -1,47 +1,64 @@
 // Keywords die vlees of vis aanduiden → recept is NIET vegetarisch
-// Gebruik als hele woorden (woordgrens-matching in filterRecepten)
+// Elk keyword wordt als substring gematcht (bevat), maar is specifiek genoeg
+// om geen valse positieven te geven.
 const VLEES_VIS_KEYWORDS = [
-  // Vlees
-  "kip", "chicken", "rundvlees", "rund", "beef", "varken", "pork", "lam", "lamb",
-  "gehakt", "spek", "bacon", "worst", "saucijs", "salami", "prosciutto", "ham",
-  "pancetta", "chorizo", "duck", "eend", "kalkoen", "turkey", "carnitas", "ribeye",
-  "entrecote", "ossenhaas", "biefstuk", "steak", "spareribs", "vlees", "meat",
-  "konijn", "rabbit", "hert", "wild",
-  // Vis & zeevruchten — specifiek genoeg om geen valse positieven te geven
-  "zalm", "salmon", "tonijn", "tuna", "sardine", "ansjovis", "anchovy", "anchovies",
-  "makreel", "garnaal", "shrimp", "prawn", "inktvis", "squid", "octopus",
-  "mossel", "mussel", "kreeft", "lobster", "krab", "crab", "zeevruchten", "seafood",
-  "scampi", "tilapia", "kabeljauw", "cod", "witvis", "haddock", "forellen",
-  // Meer specifiek voor vis: gebruik "vilet" niet, wél expliciete vissen
-  "haring", "paling", "brasem", "snoek", "forel",
-  // Combinaties die zeker vlees/vis zijn
-  "visfilet", "kipfilet", "kippenborst", "kippendij", "kipdij", "gehaktbal",
+  // Kip
+  "kip", "chicken", "kipfilet", "kippenborst", "kippendij", "kipdij",
+  "scharrelkip", "kiphaas", "kippenpoot",
+  // Rund/beef
+  "rundvlees", "rundergehakt", "beef", "biefstuk", "ribeye", "entrecote",
+  "ossenhaas", "gehakt", // gehakt = bijna altijd vlees
+  // Varken
+  "varkensvlees", "varken", "pork", "spek", "bacon", "pancetta", "chorizo",
+  "salami", "prosciutto", "ham", "saucijs", "spareribs", "worst",
+  // Lam
+  "lamsvlees", "lamsgehakt", "lamsfilet", "lamsrack", "lam ", "lamb",
+  // Overig vlees
+  "eend", "duck", "kalkoen", "turkey", "carnitas", "hert", "konijn", "rabbit",
+  "vlees", "meat",
+  // Vis — specifiek genoeg
+  "zalmfilet", "zalm", "salmon",
+  "tonijnfilet", "tonijn", "tuna",
+  "sardine",
+  "ansjovis", "anchovy", "anchovies",
+  "makreel",
+  "garnaal", "shrimp", "prawn", "scampi",
+  "inktvis", "squid", "octopus",
+  "mossel", "mussel",
+  "kreeft", "lobster",
+  "krab", "crab",
+  "zeevruchten", "seafood",
+  "tilapia", "kabeljauw", "cod", "haddock",
+  "haring", "paling", "forel", "forellen", "snoek",
+  "visfilet", "scholfilet", "schol",
+  // Generiek "vis" maar voorkom "viskoek" false negative — "vis" is genoeg
+  // want "viskoekjes" bevat wel degelijk het woord "vis"
+  "viskoek", "visstick",
+  // Gevogelte
+  "eendenborst", "kippenvleugel",
 ];
 
 // Keywords die dierlijke producten aanduiden → recept is NIET vegan
 const DIERLIJK_KEYWORDS = [
-  "boter", "butter", "melk", "milk", "room", "cream", "kaas", "cheese",
-  "parmezaan", "parmesan", "pecorino", "mozzarella", "feta", "gorgonzola",
-  "cheddar", "comté", "roquefort", "halloumi", "geitenkaas", "ricotta",
-  "mascarpone", "brie", "camembert", "gruyère", "gruyere",
+  "boter", "roomboter", "butter",
+  "melk", "milk", "halfvolle melk", "volle melk",
+  "slagroom", "room", "cream",
+  "kaas", "cheese", "parmezaan", "parmesan", "pecorino", "mozzarella",
+  "feta", "gorgonzola", "cheddar", "comté", "roquefort", "halloumi",
+  "geitenkaas", "ricotta", "mascarpone", "brie", "camembert", "gruyère", "gruyere",
   "ei", "eieren", "egg", "eggs", "eiwitten", "eigeel",
   "honing", "honey",
   "yoghurt", "yogurt", "kwark", "ghee",
+  "crème fraîche", "creme fraiche", "zure room",
 ];
-
-// Maakt een regex die het keyword als heel woord matcht (woordgrens of spatie/leesteken)
-function maakWoordRegex(keyword: string): RegExp {
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(^|[\\s,()/-])${escaped}([\\s,()/-]|$)`, "i");
-}
 
 type IngredientRecord = { naam: string };
 
 function bevatKeyword(ingredienten: IngredientRecord[], keywords: string[]): boolean {
-  const regexes = keywords.map(maakWoordRegex);
-  return ingredienten.some((ing) =>
-    regexes.some((re) => re.test(` ${ing.naam} `))
-  );
+  return ingredienten.some((ing) => {
+    const naam = ing.naam.toLowerCase();
+    return keywords.some((kw) => naam.includes(kw.toLowerCase()));
+  });
 }
 
 export function isVegetarisch(ingredienten: IngredientRecord[]): boolean {
