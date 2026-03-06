@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 
 const opties = [
-  { label: "Nieuwste eerst", waarde: "nieuw" },
   { label: "Meest recent", waarde: "recent" },
+  { label: "Nieuwste eerst", waarde: "nieuw" },
   { label: "Hoogste score eerst", waarde: "sterren-hoog" },
   { label: "Laagste score eerst", waarde: "sterren-laag" },
   { label: "A–Z", waarde: "az" },
@@ -35,7 +35,7 @@ export default function SorteerMenu({ huidigeSorteer, huidigeParams }: Props) {
 
   function kies(waarde: string) {
     setOpen(false);
-    const params = { ...huidigeParams, sorteer: waarde === "nieuw" ? undefined : waarde };
+    const params = { ...huidigeParams, sorteer: waarde === "recent" ? undefined : waarde };
     const parts = Object.entries(params)
       .filter(([, v]) => v !== undefined && v !== "")
       .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`);

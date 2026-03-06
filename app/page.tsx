@@ -91,8 +91,15 @@ export default async function HomePage({
     recepten.sort((a, b) => (a.beoordeling ?? 6) - (b.beoordeling ?? 6));
   } else if (sorteer === "az") {
     recepten.sort((a, b) => a.titel.localeCompare(b.titel, "nl"));
-  } else if (sorteer === "recent") {
-    // Meest recent: max van updatedAt en laatste opmerking createdAt
+  } else if (sorteer === "nieuw") {
+    // Nieuwste eerst: recepten met foto's eerst
+    recepten.sort((a, b) => {
+      const aHeeftFoto = a.fotos.length > 0 ? 0 : 1;
+      const bHeeftFoto = b.fotos.length > 0 ? 0 : 1;
+      return aHeeftFoto - bHeeftFoto;
+    });
+  } else {
+    // Standaard (Meest recent): max van updatedAt en laatste opmerking createdAt
     recepten.sort((a, b) => {
       const aRecent = Math.max(
         a.updatedAt.getTime(),
@@ -103,13 +110,6 @@ export default async function HomePage({
         b.opmerkingen[0]?.createdAt.getTime() ?? 0
       );
       return bRecent - aRecent;
-    });
-  } else {
-    // Standaard (nieuwste eerst): recepten met foto's eerst
-    recepten.sort((a, b) => {
-      const aHeeftFoto = a.fotos.length > 0 ? 0 : 1;
-      const bHeeftFoto = b.fotos.length > 0 ? 0 : 1;
-      return aHeeftFoto - bHeeftFoto;
     });
   }
 
