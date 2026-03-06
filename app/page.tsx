@@ -61,6 +61,8 @@ export default async function HomePage({
         _count: { select: { opmerkingen: true } },
         // Ingrediënten meeladen voor dieet-detectie
         ingredienten: { select: { naam: true } },
+        // Meest recente opmerking voor 'Recent' sortering
+        opmerkingen: { orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -89,6 +91,19 @@ export default async function HomePage({
     recepten.sort((a, b) => (a.beoordeling ?? 6) - (b.beoordeling ?? 6));
   } else if (sorteer === "az") {
     recepten.sort((a, b) => a.titel.localeCompare(b.titel, "nl"));
+  } else if (sorteer === "recent") {
+    // Meest recent: max van updatedAt en laatste opmerking createdAt
+    recepten.sort((a, b) => {
+      const aRecent = Math.max(
+        a.updatedAt.getTime(),
+        a.opmerkingen[0]?.createdAt.getTime() ?? 0
+      );
+      const bRecent = Math.max(
+        b.updatedAt.getTime(),
+        b.opmerkingen[0]?.createdAt.getTime() ?? 0
+      );
+      return bRecent - aRecent;
+    });
   } else {
     // Standaard (nieuwste eerst): recepten met foto's eerst
     recepten.sort((a, b) => {
@@ -256,6 +271,22 @@ export default async function HomePage({
                   <div className="mt-1.5 flex items-center gap-3 text-xs text-neutral-400">
                     {recept.bereidingstijd && (
                       <span>{recept.bereidingstijd} min</span>
+                    )}
+                    {recept.ingebrachtDoor && (
+                      <Link
+                        href={`/?${new URLSearchParams({
+                          ...Object.fromEntries(
+                            Object.entries({ categorie, q, sorteer, dieet }).filter(
+                              ([, v]) => v !== undefined && v !== ""
+                            )
+                          ),
+                          ingebracht: recept.ingebrachtDoor,
+                        }).toString()}`}
+                        className="hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        door {recept.ingebrachtDoor}
+                      </Link>
                     )}
                     {recept.beoordeling && (
                       <span>{"★".repeat(recept.beoordeling)}</span>

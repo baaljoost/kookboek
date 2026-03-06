@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 
 const opties = [
   { label: "Nieuwste eerst", waarde: "nieuw" },
+  { label: "Meest recent", waarde: "recent" },
   { label: "Hoogste score eerst", waarde: "sterren-hoog" },
   { label: "Laagste score eerst", waarde: "sterren-laag" },
   { label: "A–Z", waarde: "az" },

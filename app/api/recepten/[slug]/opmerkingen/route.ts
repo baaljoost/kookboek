@@ -40,6 +40,15 @@ export async function POST(
     },
   });
 
+  // Auto-populate recipe rating if empty and comment has stars
+  const validSterren = sterren && sterren >= 1 && sterren <= 5 ? sterren : null;
+  if (validSterren) {
+    await prisma.recept.updateMany({
+      where: { id: recept.id, beoordeling: null },
+      data: { beoordeling: validSterren },
+    });
+  }
+
   return NextResponse.json(opmerking, { status: 201 });
 }
 
