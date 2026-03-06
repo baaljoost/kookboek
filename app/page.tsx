@@ -283,7 +283,6 @@ export default async function HomePage({
                           ingebracht: recept.ingebrachtDoor,
                         }).toString()}`}
                         className="hover:underline"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         door {recept.ingebrachtDoor}
                       </Link>
