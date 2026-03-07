@@ -50,9 +50,16 @@ export default async function HomePage({
       where: {
         ...(categorie && { categorie: categorie as Categorie }),
         ...(q && {
-          ingredienten: {
-            some: { naam: { contains: q, mode: "insensitive" } },
-          },
+          OR: [
+            {
+              ingredienten: {
+                some: { naam: { contains: q, mode: "insensitive" } },
+              },
+            },
+            {
+              titel: { contains: q, mode: "insensitive" },
+            },
+          ],
         }),
         ...ingebrachtFilter,
       },
@@ -163,7 +170,7 @@ export default async function HomePage({
               type="text"
               name="q"
               defaultValue={q}
-              placeholder="Zoek op ingrediënt…"
+              placeholder="Zoek op ingrediënt of maaltijd…"
               className="input flex-1"
             />
             {categorie && (
