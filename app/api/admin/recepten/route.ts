@@ -11,6 +11,7 @@ interface ReceptPayload {
   beoordeling: number | null;
   herkomstNaam: string;
   herkomstUrl: string;
+  ingebrachtDoor: string | null;
   tags: string[];
   ingredienten: {
     hoeveelheid: string;
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
       beoordeling: body.beoordeling,
       herkomstNaam: body.herkomstNaam || null,
       herkomstUrl: body.herkomstUrl || null,
+      ingebrachtDoor: body.ingebrachtDoor || null,
       ingredienten: {
         create: body.ingredienten.map((ing, i) => ({
           volgorde: i,

@@ -30,6 +30,7 @@ export default async function BewerkReceptPage({
     beoordeling: recept.beoordeling?.toString() ?? "",
     herkomstNaam: recept.herkomstNaam ?? "",
     herkomstUrl: recept.herkomstUrl ?? "",
+    ingebrachtDoor: recept.ingebrachtDoor ?? "",
     tags: recept.tags.map((rt) => rt.tag.naam).join(", "),
     ingredienten: recept.ingredienten.map((ing) => ({
       id: ing.id,

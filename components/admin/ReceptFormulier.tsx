@@ -32,6 +32,7 @@ interface FormData {
   beoordeling: string;
   herkomstNaam: string;
   herkomstUrl: string;
+  ingebrachtDoor: string;
   tags: string;
   ingredienten: Ingredient[];
   stappen: Stap[];
@@ -104,6 +105,7 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
     beoordeling: initieleWaarden?.beoordeling ?? "",
     herkomstNaam: initieleWaarden?.herkomstNaam ?? "",
     herkomstUrl: initieleWaarden?.herkomstUrl ?? "",
+    ingebrachtDoor: initieleWaarden?.ingebrachtDoor ?? "",
     tags: initieleWaarden?.tags ?? "",
     ingredienten: initieleWaarden?.ingredienten ?? [leegIngredient()],
     stappen: initieleWaarden?.stappen ?? [legeStap()],
@@ -166,6 +168,7 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
         ? parseInt(formData.bereidingstijd)
         : null,
       beoordeling: formData.beoordeling ? parseInt(formData.beoordeling) : null,
+      ingebrachtDoor: formData.ingebrachtDoor.trim() || null,
       tags: formData.tags
         .split(",")
         .map((t) => t.trim())
@@ -295,6 +298,16 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="label">Ingebracht door</label>
+            <input
+              type="text"
+              value={formData.ingebrachtDoor}
+              onChange={(e) => setVeld("ingebrachtDoor", e.target.value)}
+              className="input"
+              placeholder="naam van inbrenger (leeg = jij)"
+            />
           </div>
           <div>
             <label className="label">Bron / herkomst</label>
