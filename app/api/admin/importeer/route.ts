@@ -40,27 +40,48 @@ function parsePorties(waarde: string | number | string[] | undefined): number | 
 }
 
 function parseInstructies(
-  instructies: string | string[] | JsonLdInstruction[] | undefined
+  instructies: string | string[] | JsonLdInstruction[] | undefined,
+  recipeIngredient?: string[]
 ): string[] {
   if (!instructies) return [];
+
+  // Helper: detecteer of een tekst eerder op een ingrediënt lijkt dan op een bereidingsstap
+  const ingredientenSet = new Set(
+    (recipeIngredient ?? []).map((s) => s.toLowerCase().trim())
+  );
+  function lijktOpIngredient(tekst: string): boolean {
+    const lower = tekst.toLowerCase().trim();
+    // Exacte match met een bekend ingrediënt
+    if (ingredientenSet.has(lower)) return true;
+    // Begint met een typische hoeveelheid-aanduiding (kort = ingrediënt, niet een stap)
+    return (
+      tekst.length < 100 &&
+      /^[\d½¼¾⅓⅔\u2150-\u215E\/\s]+(cup|cups|tsp|tbsp|gram|g\b|kg|ml|oz|lb|ounce|pound|tablespoon|teaspoon|pkg|package|pinch|dash)/i.test(tekst)
+    );
+  }
 
   if (typeof instructies === "string") {
     return instructies
       .split(/\n+/)
       .map((s) => s.replace(/^\d+[\.\)]\s*/, "").trim())
-      .filter((s) => s.length > 10);
+      .filter((s) => s.length > 10 && !lijktOpIngredient(s));
   }
 
   if (Array.isArray(instructies)) {
     const stappen: string[] = [];
     for (const item of instructies) {
       if (typeof item === "string") {
-        stappen.push(item.trim());
+        const trimmed = item.trim();
+        if (trimmed && !lijktOpIngredient(trimmed)) stappen.push(trimmed);
       } else if (item["@type"] === "HowToStep") {
         if (item.text) stappen.push(item.text.trim());
       } else if (item["@type"] === "HowToSection" && item.itemListElement) {
-        for (const sub of item.itemListElement) {
-          if (sub.text) stappen.push(sub.text.trim());
+        // Sla secties over die als ingrediënten-sectie zijn gelabeld (veelvoorkomende bug in recipe plugins)
+        const sectionName = (item.name ?? "").toLowerCase();
+        if (!sectionName.includes("ingredi")) {
+          for (const sub of item.itemListElement) {
+            if (sub.text) stappen.push(sub.text.trim());
+          }
         }
       }
     }
@@ -602,7 +623,7 @@ export async function POST(request: NextRequest) {
       || ogImage || extractFotoUrl(recept ?? {}) || null;
     const partialIngredienten = recept?.recipeIngredient?.map(parseIngredient)
       ?? (html ? extractIngredients(html).map(parseIngredient) : []);
-    const partialStappen = recept ? parseInstructies(recept.recipeInstructions).map((tekst) => ({ tekst }))
+    const partialStappen = recept ? parseInstructies(recept.recipeInstructions, recept.recipeIngredient).map((tekst) => ({ tekst }))
       : (html ? extractStappen(html).map((tekst) => ({ tekst })) : []);
 
     // Detecteer loginpagina of bot-blokkade
@@ -645,7 +666,16 @@ export async function POST(request: NextRequest) {
   }
 
   const ingredienten = (recept.recipeIngredient ?? []).map(parseIngredient);
-  const stappen = parseInstructies(recept.recipeInstructions);
+  let stappen = parseInstructies(recept.recipeInstructions, recept.recipeIngredient);
+
+  // Als stappen leeg zijn na het filteren (bijv. JSON-LD instructies bevatten eigenlijk ingrediënten),
+  // probeer alsnog AI-extractie als er HTML beschikbaar is
+  if (stappen.length === 0 && html) {
+    const aiRecept = await extractViaAI(html);
+    if (aiRecept) {
+      stappen = parseInstructies(aiRecept.recipeInstructions);
+    }
+  }
 
   // Foto: JSON-LD image veld → og:image van extensie → og:image uit HTML
   let fotoUrl = extractFotoUrl(recept);
