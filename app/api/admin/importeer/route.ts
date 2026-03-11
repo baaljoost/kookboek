@@ -295,30 +295,38 @@ function extractStappen(html: string): string[] {
   );
 
   if (stapContainerMatch) {
-    // Zoek genummerde li's of p tags
     const liItems = stapContainerMatch[1].match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
     const parsed = liItems.map((li) => stripHtml(li).trim()).filter((s) => s.length > 15);
     if (parsed.length > 0) return parsed;
 
-    // Zoek p tags als fallback
     const pItems = stapContainerMatch[1].match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
     const parsedP = pItems.map((p) => stripHtml(p).trim()).filter((s) => s.length > 20);
     if (parsedP.length > 0) return parsedP;
   }
 
-  // Patroon 2: header gevolgd door ol
-  const headerPatterns = [
-    /(?:bereiding|werkwijze|instructies|preparation|directions|method)[^<]{0,100}<(?:ul|ol)[^>]*>([\s\S]{10,5000}?)<\/(?:ul|ol)>/gi,
-    /(?:h[1-4])[^>]*>[\s\S]*?(?:bereiding|werkwijze|instructie|method)[\s\S]*?<\/h[1-4]>[\s\S]{0,500}?<(?:ol|ul)[^>]*>([\s\S]{10,3000}?)<\/(?:ol|ul)>/gi,
+  // Patroon 2: header gevolgd door ul/ol
+  const headerListPatterns = [
+    /(?:bereiding|werkwijze|instructies?|instructions?|preparation|directions?|method)[^<]{0,100}<(?:ul|ol)[^>]*>([\s\S]{10,5000}?)<\/(?:ul|ol)>/gi,
+    /(?:h[1-4])[^>]*>[\s\S]*?(?:bereiding|werkwijze|instructies?|instructions?|method)[\s\S]*?<\/h[1-4]>[\s\S]{0,500}?<(?:ol|ul)[^>]*>([\s\S]{10,3000}?)<\/(?:ol|ul)>/gi,
   ];
 
-  for (const pattern of headerPatterns) {
+  for (const pattern of headerListPatterns) {
     const m = pattern.exec(html);
     if (m) {
       const items = m[1].match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
       const parsed = items.map((li) => stripHtml(li).trim()).filter((s) => s.length > 15);
       if (parsed.length > 0) return parsed;
     }
+  }
+
+  // Patroon 3: header met "Instructions/Directions/Bereiding" gevolgd door <p> alinea's
+  // (voor sites zoals andrewzimmern.com die p-tags gebruiken i.p.v. lijsten)
+  const headerPPattern = /<h[1-4][^>]*>[^<]*(?:instructions?|directions?|bereiding|werkwijze|preparation)[^<]*<\/h[1-4]>([\s\S]{0,3000}?)(?=<h[1-4]|<\/(?:div|section|article|main)>|$)/gi;
+  const headerPMatch = headerPPattern.exec(html);
+  if (headerPMatch) {
+    const pItems = headerPMatch[1].match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
+    const parsed = pItems.map((p) => stripHtml(p).trim()).filter((s) => s.length > 15);
+    if (parsed.length > 0) return parsed;
   }
 
   return [];
@@ -503,9 +511,13 @@ export async function POST(request: NextRequest) {
         const fallback = scrapHtmlFallback(pageHtml, url ?? "");
         if (fallback) recept = fallback as JsonLdRecipe;
       }
-      // Laatste redmiddel: AI-extractie van de plain text
-      if (!recept) {
-        recept = await extractViaAI(pageHtml);
+      // Laatste redmiddel: AI-extractie als recept ontbreekt of instructies leeg zijn
+      {
+        const heeftInstructies = Array.isArray(recept?.recipeInstructions) && (recept.recipeInstructions as unknown[]).length > 0;
+        if (!recept || !heeftInstructies) {
+          const aiRecept = await extractViaAI(pageHtml);
+          if (aiRecept) recept = aiRecept;
+        }
       }
       html = pageHtml; // gebruik voor og:image fallback
     }
@@ -568,9 +580,13 @@ export async function POST(request: NextRequest) {
       if (fallback) recept = fallback as JsonLdRecipe;
     }
 
-    // Laatste redmiddel: AI-extractie van de plain text
-    if (!recept) {
-      recept = await extractViaAI(html);
+    // Laatste redmiddel: AI-extractie als recept ontbreekt of instructies leeg zijn
+    {
+      const heeftInstructies = Array.isArray(recept?.recipeInstructions) && (recept.recipeInstructions as unknown[]).length > 0;
+      if (!recept || !heeftInstructies) {
+        const aiRecept = await extractViaAI(html);
+        if (aiRecept) recept = aiRecept;
+      }
     }
   }
 
