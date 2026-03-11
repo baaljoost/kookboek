@@ -671,13 +671,40 @@ export async function POST(request: NextRequest) {
   const ingredienten = (recept.recipeIngredient ?? []).map(parseIngredient);
   let stappen = parseInstructies(recept.recipeInstructions, recept.recipeIngredient);
 
-  // Als stappen leeg zijn na het filteren (bijv. JSON-LD instructies bevatten eigenlijk ingrediënten),
-  // probeer alsnog AI-extractie als er HTML beschikbaar is
+  // Als stappen leeg zijn na het filteren (bijv. JSON-LD instructies bevatten eigenlijk ingrediënten):
+  // 1. Probeer HTML scraper (geen API nodig)
+  // 2. Probeer AI als HTML ook leeg geeft
+  // 3. Return foutmelding met partialData als alles mislukt
   if (stappen.length === 0 && html) {
-    const aiRecept = await extractViaAI(html);
-    if (aiRecept) {
-      stappen = parseInstructies(aiRecept.recipeInstructions);
+    const htmlStappen = extractStappen(html);
+    if (htmlStappen.length > 0) {
+      stappen = htmlStappen;
+    } else {
+      const aiRecept = await extractViaAI(html);
+      if (aiRecept) {
+        stappen = parseInstructies(aiRecept.recipeInstructions);
+      }
     }
+  }
+
+  // Als stappen nog steeds leeg zijn: return als mislukking met partialData
+  // zodat de gebruiker de foutmelding ziet en naam kan invullen
+  if (stappen.length === 0) {
+    const hostname = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } })();
+    return NextResponse.json(
+      {
+        error: "Bereidingsstappen niet gevonden op deze pagina.",
+        partialData: {
+          herkomstUrl: url,
+          herkomstNaam: hostname,
+          titel: recept.name ?? "",
+          fotoUrl: extractFotoUrl(recept) || null,
+          ingredienten,
+          stappen: [],
+        },
+      },
+      { status: 422 }
+    );
   }
 
   // Foto: JSON-LD image veld → og:image van extensie → og:image uit HTML
