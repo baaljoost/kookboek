@@ -476,9 +476,20 @@ export async function POST(request: NextRequest) {
       ?? (html ? extractIngredients(html).map(parseIngredient) : []);
     const partialStappen = recept ? parseInstructies(recept.recipeInstructions).map((tekst) => ({ tekst }))
       : (html ? extractStappen(html).map((tekst) => ({ tekst })) : []);
+
+    // Detecteer loginpagina (pagina niet bereikbaar zonder inloggen)
+    const isLoginPagina = html && (
+      /<title[^>]*>\s*(inloggen|login|sign in|aanmelden)\s*<\/title>/i.test(html)
+      || /window\.location.*login/i.test(html)
+      || html.length < 20000 && /login|inloggen|sign.in/i.test(html) && !/ingredi/i.test(html)
+    );
+    const foutmelding = isLoginPagina
+      ? "Deze pagina vereist inloggen. Gebruik de browserextensie als je al bent ingelogd op de website."
+      : "Geen receptdata gevonden op deze pagina. Vul het recept handmatig in.";
+
     return NextResponse.json(
       {
-        error: "Geen receptdata gevonden op deze pagina. Vul het recept handmatig in.",
+        error: foutmelding,
         partialData: {
           herkomstUrl: url,
           herkomstNaam: hostname,
