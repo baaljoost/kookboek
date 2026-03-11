@@ -108,6 +108,7 @@ export default function VoorstelFormulier() {
       herkomstNaam: data.herkomstNaam || prev.herkomstNaam,
       herkomstUrl: data.herkomstUrl || prev.herkomstUrl,
       fotoUrl: data.fotoUrl || prev.fotoUrl,
+      categorie: data.categorie || prev.categorie,
       ingredienten: data.ingredienten?.length ? data.ingredienten : prev.ingredienten,
       stappen: data.stappen?.length ? data.stappen : prev.stappen,
     }));

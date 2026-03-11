@@ -66,16 +66,50 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
     setImportBezig(true);
     setImportFout("");
 
+    // Probeer de pagina vanuit de browser te laden (omzeilt bot-detectie, werkt voor CSR-sites)
+    let jsonLdStrings: string[] | null = null;
+    let pageHtml: string | null = null;
+    try {
+      const pageRes = await fetch(importUrl.trim());
+      if (pageRes.ok) {
+        const rawHtml = await pageRes.text();
+        pageHtml = rawHtml.slice(0, 300000);
+        const scriptRegex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+        const scripts: string[] = [];
+        let m;
+        while ((m = scriptRegex.exec(rawHtml)) !== null) {
+          if (m[1]) scripts.push(m[1]);
+        }
+        jsonLdStrings = scripts;
+      }
+    } catch {
+      // CORS of netwerkfout — server doet de fetch
+    }
+
     const res = await fetch("/api/admin/importeer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: importUrl.trim() }),
+      body: JSON.stringify({ url: importUrl.trim(), jsonLdStrings, pageHtml }),
     });
 
     const data = await res.json();
 
     if (!res.ok) {
       setImportFout(data.error ?? "Importeren mislukt");
+      if (data.partialData) {
+        const pd = data.partialData;
+        setFormData((prev) => ({
+          ...prev,
+          titel: pd.titel || prev.titel,
+          herkomstNaam: pd.herkomstNaam || prev.herkomstNaam,
+          herkomstUrl: pd.herkomstUrl || prev.herkomstUrl,
+          ingredienten: pd.ingredienten?.length ? pd.ingredienten : prev.ingredienten,
+          stappen: pd.stappen?.length ? pd.stappen : prev.stappen,
+          fotos: pd.fotoUrl
+            ? [{ url: pd.fotoUrl, altTekst: pd.titel ?? "" }, ...prev.fotos].slice(0, 5)
+            : prev.fotos,
+        }));
+      }
       setImportBezig(false);
       return;
     }
@@ -87,6 +121,7 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
       bereidingstijd: data.bereidingstijd ? String(data.bereidingstijd) : prev.bereidingstijd,
       herkomstNaam: data.herkomstNaam || prev.herkomstNaam,
       herkomstUrl: data.herkomstUrl || prev.herkomstUrl,
+      categorie: data.categorie || prev.categorie,
       ingredienten: data.ingredienten?.length ? data.ingredienten : prev.ingredienten,
       stappen: data.stappen?.length ? data.stappen : prev.stappen,
       fotos: data.fotoUrl
