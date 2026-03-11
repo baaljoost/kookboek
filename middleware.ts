@@ -14,8 +14,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const cookie = request.cookies.get(SESSION_COOKIE);
-  if (cookie?.value !== SESSION_VALUE) {
+  const authOk = request.cookies.get(SESSION_COOKIE)?.value === SESSION_VALUE;
+
+  // Foto-endpoints zijn vrij toegankelijk (persoonlijk kookboek, geen strenge beveiliging nodig)
+  if (/^\/api\/admin\/recepten\/\d+\/fotos/.test(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (!authOk) {
     // API-routes krijgen een 401 JSON (geen redirect, anders stuurt een 307
     // method-preserving redirect een POST naar de loginpagina → "server action not found")
     if (pathname.startsWith("/api/")) {
