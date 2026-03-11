@@ -132,7 +132,7 @@ async function start() {
 
   // Extraheer JSON-LD direct uit de DOM van de geopende tab
   // (omzeilt botdetectie: de browser heeft de pagina al geladen)
-  let jsonLdStrings = [];
+  let jsonLdStrings = null; // null = executeScript niet geprobeerd/mislukt
   let ogImage = null;
   try {
     const results = await chrome.scripting.executeScript({
@@ -147,8 +147,10 @@ async function start() {
     });
     jsonLdStrings = results[0]?.result?.scripts || [];
     ogImage = results[0]?.result?.ogImage || null;
-  } catch {
-    // executeScript mislukt (bv. chrome:// pagina's) – fallback naar server fetch
+  } catch (err) {
+    // executeScript mislukt (bv. chrome:// pagina's of ontbrekende permissie)
+    console.warn("executeScript mislukt:", err);
+    jsonLdStrings = null;
   }
 
   // Stuur naar de importeer API (met JSON-LD uit browser of fallback naar server fetch)

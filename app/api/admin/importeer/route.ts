@@ -389,7 +389,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { url, jsonLdStrings, ogImage } = body as {
     url?: string;
-    jsonLdStrings?: string[];
+    jsonLdStrings?: string[] | null; // null = extensie kon pagina niet lezen; [] = pagina geladen maar geen JSON-LD
     ogImage?: string | null;
   };
 
@@ -401,14 +401,22 @@ export async function POST(request: NextRequest) {
   let html = "";
 
   // Stap 1: gebruik JSON-LD die de browser-extensie direct uit de DOM heeft gehaald
-  if (jsonLdStrings && jsonLdStrings.length > 0) {
+  // jsonLdStrings is een array (ook leeg) → extensie heeft de pagina geladen → geen server fetch
+  // jsonLdStrings is null → extensie kon het niet lezen → probeer server fetch
+  if (Array.isArray(jsonLdStrings)) {
     for (const str of jsonLdStrings) {
       recept = vindJsonLdVanString(str);
       if (recept) break;
     }
+    if (!recept) {
+      return NextResponse.json(
+        { error: "Geen receptdata gevonden op deze pagina. De site heeft geen receptopmaak (JSON-LD)." },
+        { status: 422 }
+      );
+    }
   }
 
-  // Stap 2: server-side fetch als fallback (geen JSON-LD uit browser ontvangen)
+  // Stap 2: server-side fetch (geen extensie-data ontvangen)
   if (!recept) {
     try {
       const res = await fetch(url, {
