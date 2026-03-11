@@ -104,6 +104,67 @@ export default function FotoEditor({
     setRotatie((r) => (r + 90) % 360);
   }
 
+  // Refs voor touch-events (vermijdt stale closures in non-passive listeners)
+  const cropModusRef = useRef(false);
+  cropModusRef.current = cropModus;
+  const isCroppingRef = useRef(false);
+  const cropStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Touch-events voor crop (non-passive zodat preventDefault werkt op mobiel)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    function getPos(touch: Touch) {
+      const rect = canvas!.getBoundingClientRect();
+      return {
+        x: (touch.clientX - rect.left) * (canvas!.width / rect.width),
+        y: (touch.clientY - rect.top) * (canvas!.height / rect.height),
+      };
+    }
+
+    function handleTouchStart(e: TouchEvent) {
+      if (!cropModusRef.current || !e.touches[0]) return;
+      e.preventDefault();
+      const pos = getPos(e.touches[0]);
+      cropStartRef.current = pos;
+      isCroppingRef.current = true;
+      setCropStart(pos);
+      setCropRect(null);
+      setIsCropping(true);
+    }
+
+    function handleTouchMove(e: TouchEvent) {
+      if (!isCroppingRef.current || !cropStartRef.current || !e.touches[0]) return;
+      e.preventDefault();
+      const pos = getPos(e.touches[0]);
+      const start = cropStartRef.current;
+      setCropRect({
+        x: Math.min(start.x, pos.x),
+        y: Math.min(start.y, pos.y),
+        w: Math.abs(pos.x - start.x),
+        h: Math.abs(pos.y - start.y),
+      });
+    }
+
+    function handleTouchEnd() {
+      isCroppingRef.current = false;
+      setIsCropping(false);
+    }
+
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+    canvas.addEventListener("touchend", handleTouchEnd);
+    canvas.addEventListener("touchcancel", handleTouchEnd);
+
+    return () => {
+      canvas.removeEventListener("touchstart", handleTouchStart);
+      canvas.removeEventListener("touchmove", handleTouchMove);
+      canvas.removeEventListener("touchend", handleTouchEnd);
+      canvas.removeEventListener("touchcancel", handleTouchEnd);
+    };
+  }, [afbeelding]); // herregistreer wanneer canvas zichtbaar wordt (na laden afbeelding)
+
   // Muis-events voor crop
   function getCanvasPos(e: React.MouseEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
