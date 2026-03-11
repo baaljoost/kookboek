@@ -54,9 +54,10 @@ function parseInstructies(
     // Exacte match met een bekend ingrediënt
     if (ingredientenSet.has(lower)) return true;
     // Begint met een typische hoeveelheid-aanduiding (kort = ingrediënt, niet een stap)
+    // Ondersteunt ook "14-ounce" (getal direct gevolgd door koppelteken + eenheid)
     return (
-      tekst.length < 100 &&
-      /^[\d½¼¾⅓⅔\u2150-\u215E\/\s]+(cup|cups|tsp|tbsp|gram|g\b|kg|ml|oz|lb|ounce|pound|tablespoon|teaspoon|pkg|package|pinch|dash)/i.test(tekst)
+      tekst.length < 120 &&
+      /^[\d½¼¾⅓⅔\u2150-\u215E\/\s-]*([\d]+[-\s])(cup|cups|tsp|tbsp|gram|g\b|kg|ml|oz|lb|ounce|ounces|pound|pounds|tablespoon|tablespoons|teaspoon|teaspoons|pkg|package|pinch|dash)/i.test(tekst)
     );
   }
 
@@ -74,7 +75,9 @@ function parseInstructies(
         const trimmed = item.trim();
         if (trimmed && !lijktOpIngredient(trimmed)) stappen.push(trimmed);
       } else if (item["@type"] === "HowToStep") {
-        if (item.text) stappen.push(item.text.trim());
+        // Filter ook HowToStep items die eigenlijk ingrediënten zijn
+        // (sommige sites zoals andrewzimmern.com stoppen ingrediënten als HowToStep in recipeInstructions)
+        if (item.text && !lijktOpIngredient(item.text.trim())) stappen.push(item.text.trim());
       } else if (item["@type"] === "HowToSection" && item.itemListElement) {
         // Sla secties over die als ingrediënten-sectie zijn gelabeld (veelvoorkomende bug in recipe plugins)
         const sectionName = (item.name ?? "").toLowerCase();
