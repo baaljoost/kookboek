@@ -463,8 +463,31 @@ export async function POST(request: NextRequest) {
   }
 
   if (!recept || !recept.name) {
+    // Stuur zoveel mogelijk partialData mee zodat het formulier alvast pre-gevuld kan worden
+    const hostname = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } })();
+    const ogTitel = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i)?.[1]
+      || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:title"/i)?.[1]
+      || html.match(/<title[^>]*>([^<|–\-]+)/i)?.[1]?.trim()
+      || recept?.name || "";
+    const ogFoto = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i)?.[1]
+      || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/i)?.[1]
+      || ogImage || extractFotoUrl(recept ?? {}) || null;
+    const partialIngredienten = recept?.recipeIngredient?.map(parseIngredient)
+      ?? (html ? extractIngredients(html).map(parseIngredient) : []);
+    const partialStappen = recept ? parseInstructies(recept.recipeInstructions).map((tekst) => ({ tekst }))
+      : (html ? extractStappen(html).map((tekst) => ({ tekst })) : []);
     return NextResponse.json(
-      { error: "Geen receptdata gevonden op deze pagina. Vul het recept handmatig in." },
+      {
+        error: "Geen receptdata gevonden op deze pagina. Vul het recept handmatig in.",
+        partialData: {
+          herkomstUrl: url,
+          herkomstNaam: hostname,
+          titel: ogTitel,
+          fotoUrl: ogFoto,
+          ingredienten: partialIngredienten,
+          stappen: partialStappen,
+        },
+      },
       { status: 422 }
     );
   }
