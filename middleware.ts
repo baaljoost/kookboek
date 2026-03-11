@@ -16,6 +16,11 @@ export function middleware(request: NextRequest) {
 
   const cookie = request.cookies.get(SESSION_COOKIE);
   if (cookie?.value !== SESSION_VALUE) {
+    // API-routes krijgen een 401 JSON (geen redirect, anders stuurt een 307
+    // method-preserving redirect een POST naar de loginpagina → "server action not found")
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+    }
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
