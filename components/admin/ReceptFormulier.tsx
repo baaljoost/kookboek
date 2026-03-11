@@ -53,13 +53,67 @@ const leegIngredient = (): Ingredient => ({
 
 const legeStap = (): Stap => ({ tekst: "" });
 
+// JSON-LD parse-hulpfuncties (client-side)
+function parseIsoDurClient(iso: string): number | null {
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!m) return null;
+  return (parseInt(m[1] ?? "0") * 60 + parseInt(m[2] ?? "0")) || null;
+}
+
+function parsePortiesClient(w: unknown): number | null {
+  if (!w) return null;
+  const s = Array.isArray(w) ? String(w[0]) : String(w);
+  const m = s.match(/\d+/);
+  return m ? parseInt(m[0]) : null;
+}
+
+function parseIngredientClient(tekst: string): Ingredient {
+  const notitieMatch = tekst.match(/^(.+?),\s*(.+)$/);
+  const notitie = notitieMatch ? notitieMatch[2].trim() : "";
+  const basis = notitieMatch ? notitieMatch[1].trim() : tekst.trim();
+  const m = basis.match(
+    /^([\d\s\u00BC\u00BD\u00BE\u2150-\u215E\/\.]+)\s*(ml|dl|cl|l|liter|gram|gr|g|kg|el|tl|eetlepel|theelepel|kopje|kop|stuks?|stuk|bosje|teen|teentje|snufje|scheut|handvol|plak|plakje|blik|zakje|pak|ons|oz|cup|cups|tbsp|tsp)?\s*(.*)/i
+  );
+  if (m) return { hoeveelheid: m[1].trim(), eenheid: m[2]?.trim() ?? "", naam: m[3].trim() || basis, notitie };
+  return { hoeveelheid: "", eenheid: "", naam: basis, notitie };
+}
+
+function parseInstructiesClient(instructies: unknown): string[] {
+  if (!instructies) return [];
+  if (typeof instructies === "string")
+    return instructies.split(/\n+/).map((s) => s.replace(/^\d+[\.\)]\s*/, "").trim()).filter((s) => s.length > 10);
+  if (!Array.isArray(instructies)) return [];
+  const stappen: string[] = [];
+  for (const item of instructies) {
+    if (typeof item === "string") stappen.push(item.trim());
+    else if (item?.["@type"] === "HowToStep" && item?.text) stappen.push(String(item.text).trim());
+    else if (item?.["@type"] === "HowToSection" && Array.isArray(item?.itemListElement))
+      for (const sub of item.itemListElement)
+        if (sub?.text) stappen.push(String(sub.text).trim());
+  }
+  return stappen.filter(Boolean);
+}
+
+function vindReceptInJsonLd(data: unknown): Record<string, unknown> | null {
+  if (!data || typeof data !== "object") return null;
+  const obj = data as Record<string, unknown>;
+  if (obj["@type"] === "Recipe") return obj;
+  if (Array.isArray(data)) return (data.find((i) => i?.["@type"] === "Recipe") as Record<string, unknown>) ?? null;
+  if (Array.isArray(obj["@graph"]))
+    return ((obj["@graph"] as unknown[]).find((i) => (i as Record<string, unknown>)?.["@type"] === "Recipe") as Record<string, unknown>) ?? null;
+  return null;
+}
+
 export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
   const router = useRouter();
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState("");
+  const [importTab, setImportTab] = useState<"url" | "jsonld">("url");
   const [importUrl, setImportUrl] = useState("");
   const [importBezig, setImportBezig] = useState(false);
   const [importFout, setImportFout] = useState("");
+  const [jsonLdTekst, setJsonLdTekst] = useState("");
+  const [jsonLdFout, setJsonLdFout] = useState("");
 
   async function handleImport() {
     if (!importUrl.trim()) return;
@@ -130,6 +184,56 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
     }));
 
     setImportBezig(false);
+  }
+
+  function handleJsonLdImport() {
+    setJsonLdFout("");
+    if (!jsonLdTekst.trim()) return;
+    try {
+      const cleaned = jsonLdTekst.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, " ");
+      const data = JSON.parse(cleaned);
+      const recept = vindReceptInJsonLd(data);
+      if (!recept) {
+        setJsonLdFout("Geen Recipe-object gevonden. Zorg dat de JSON-LD @type: \"Recipe\" bevat.");
+        return;
+      }
+
+      let bereidingstijd: number | null = null;
+      if (typeof recept.totalTime === "string") {
+        bereidingstijd = parseIsoDurClient(recept.totalTime);
+      } else if (recept.cookTime || recept.prepTime) {
+        const cook = typeof recept.cookTime === "string" ? parseIsoDurClient(recept.cookTime) ?? 0 : 0;
+        const prep = typeof recept.prepTime === "string" ? parseIsoDurClient(recept.prepTime) ?? 0 : 0;
+        bereidingstijd = cook + prep || null;
+      }
+
+      const ingredienten = Array.isArray(recept.recipeIngredient)
+        ? recept.recipeIngredient.map((i) => parseIngredientClient(String(i)))
+        : [];
+      const stappen = parseInstructiesClient(recept.recipeInstructions);
+
+      let fotoUrl = "";
+      if (typeof recept.image === "string") fotoUrl = recept.image;
+      else if (Array.isArray(recept.image) && recept.image[0])
+        fotoUrl = typeof recept.image[0] === "string" ? recept.image[0] : (recept.image[0] as Record<string, string>)?.url ?? "";
+      else if (recept.image && typeof recept.image === "object")
+        fotoUrl = (recept.image as Record<string, string>)?.url ?? "";
+
+      setFormData((prev) => ({
+        ...prev,
+        titel: String(recept.name || "") || prev.titel,
+        porties: parsePortiesClient(recept.recipeYield) ? String(parsePortiesClient(recept.recipeYield)) : prev.porties,
+        bereidingstijd: bereidingstijd ? String(bereidingstijd) : prev.bereidingstijd,
+        ingredienten: ingredienten.length ? ingredienten : prev.ingredienten,
+        stappen: stappen.length ? stappen.map((tekst) => ({ tekst })) : prev.stappen,
+        fotos: fotoUrl ? [{ url: fotoUrl, altTekst: String(recept.name || "") }, ...prev.fotos].slice(0, 5) : prev.fotos,
+      }));
+
+      setJsonLdTekst("");
+      setImportTab("url");
+    } catch {
+      setJsonLdFout("Ongeldige JSON. Controleer het formaat en probeer opnieuw.");
+    }
   }
 
   const [formData, setFormData] = useState<FormData>({
@@ -235,34 +339,80 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
-      {/* URL Import */}
+      {/* Import */}
       {!receptId && (
         <section className="bg-cream-100 border border-neutral-200 p-5">
-          <h2 className="font-serif text-xl text-neutral-900 mb-1">
-            Importeer van website
-          </h2>
-          <p className="text-xs text-neutral-400 mb-3">
-            Plak een URL van een receptwebsite. Het recept wordt automatisch ingevuld.
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={importUrl}
-              onChange={(e) => setImportUrl(e.target.value)}
-              placeholder="https://www.allerhande.nl/recept/..."
-              className="input flex-1"
-            />
+          <div className="flex gap-4 mb-4 border-b border-neutral-200 -mx-5 px-5">
             <button
               type="button"
-              onClick={handleImport}
-              disabled={importBezig || !importUrl.trim()}
-              className="btn-primary whitespace-nowrap disabled:opacity-50"
+              onClick={() => setImportTab("url")}
+              className={`text-sm pb-2 border-b-2 transition-colors ${importTab === "url" ? "border-olive-700 text-neutral-900 font-medium" : "border-transparent text-neutral-400 hover:text-neutral-600"}`}
             >
-              {importBezig ? "Importeren…" : "Importeer"}
+              Importeer van website
+            </button>
+            <button
+              type="button"
+              onClick={() => setImportTab("jsonld")}
+              className={`text-sm pb-2 border-b-2 transition-colors ${importTab === "jsonld" ? "border-olive-700 text-neutral-900 font-medium" : "border-transparent text-neutral-400 hover:text-neutral-600"}`}
+            >
+              JSON-LD plakken
             </button>
           </div>
-          {importFout && (
-            <p className="text-red-600 text-xs mt-2">{importFout}</p>
+
+          {importTab === "url" && (
+            <>
+              <p className="text-xs text-neutral-400 mb-3">
+                Plak een URL van een receptwebsite. Het recept wordt automatisch ingevuld.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={importUrl}
+                  onChange={(e) => setImportUrl(e.target.value)}
+                  placeholder="https://www.allerhande.nl/recept/..."
+                  className="input flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={handleImport}
+                  disabled={importBezig || !importUrl.trim()}
+                  className="btn-primary whitespace-nowrap disabled:opacity-50"
+                >
+                  {importBezig ? "Importeren…" : "Importeer"}
+                </button>
+              </div>
+              {importFout && (
+                <p className="text-red-600 text-xs mt-2">{importFout}</p>
+              )}
+            </>
+          )}
+
+          {importTab === "jsonld" && (
+            <>
+              <p className="text-xs text-neutral-400 mb-3">
+                Plak een JSON-LD object van een recept (bijv. gekopieerd van ChatGPT of uit de paginabron).
+              </p>
+              <textarea
+                value={jsonLdTekst}
+                onChange={(e) => setJsonLdTekst(e.target.value)}
+                placeholder={'{\n  "@type": "Recipe",\n  "name": "...",\n  "recipeIngredient": [...],\n  ...\n}'}
+                className="input w-full font-mono text-xs resize-y"
+                rows={8}
+              />
+              <div className="flex justify-end mt-2">
+                <button
+                  type="button"
+                  onClick={handleJsonLdImport}
+                  disabled={!jsonLdTekst.trim()}
+                  className="btn-primary disabled:opacity-50"
+                >
+                  Verwerk JSON-LD
+                </button>
+              </div>
+              {jsonLdFout && (
+                <p className="text-red-600 text-xs mt-2">{jsonLdFout}</p>
+              )}
+            </>
           )}
         </section>
       )}
