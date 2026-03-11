@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 interface Melding {
   id: number;
   url: string;
+  naam: string | null;
   bron: string;
   createdAt: Date | string;
 }
@@ -51,12 +52,18 @@ export default function ImportMeldingenLijst({ meldingen: initieel }: Props) {
               >
                 {melding.url}
               </a>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-3 mt-1 flex-wrap">
                 <span className="text-xs text-neutral-400">{datum}</span>
                 <span className="text-xs text-neutral-300">·</span>
                 <span className="text-xs text-neutral-400">
                   {melding.bron === "voorstellen" ? "recept voorstellen" : "recept toevoegen"}
                 </span>
+                {melding.naam && (
+                  <>
+                    <span className="text-xs text-neutral-300">·</span>
+                    <span className="text-xs text-neutral-600 font-medium">{melding.naam}</span>
+                  </>
+                )}
                 <span className="text-xs text-neutral-300">·</span>
                 <span className="text-xs text-neutral-400">{hostname}</span>
               </div>

@@ -205,6 +205,23 @@ export default async function ReceptPagina({
               ))}
             </ol>
 
+            {/* Benodigdheden */}
+            {recept.benodigdheden.length > 0 && (
+              <div className="mt-12 pt-6 border-t border-neutral-200">
+                <h2 className="font-serif text-2xl text-neutral-900 mb-4">
+                  Benodigdheden
+                </h2>
+                <ul className="space-y-1">
+                  {recept.benodigdheden.map((item, i) => (
+                    <li key={i} className="text-sm text-neutral-700 flex gap-2">
+                      <span className="text-neutral-300 select-none">—</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Herkomst */}
             {recept.herkomstNaam && (
               <div className="mt-12 pt-6 border-t border-neutral-200">

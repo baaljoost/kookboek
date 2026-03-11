@@ -12,6 +12,7 @@ interface ReceptPayload {
   herkomstUrl: string;
   ingebrachtDoor: string | null;
   tags: string[];
+  benodigdheden?: string[];
   ingredienten: {
     hoeveelheid: string;
     eenheid: string;
@@ -61,6 +62,7 @@ export async function PUT(
       herkomstNaam: body.herkomstNaam || null,
       herkomstUrl: body.herkomstUrl || null,
       ingebrachtDoor: body.ingebrachtDoor || null,
+      benodigdheden: body.benodigdheden ?? [],
       ingredienten: {
         create: body.ingredienten.map((ing, i) => ({
           volgorde: i,

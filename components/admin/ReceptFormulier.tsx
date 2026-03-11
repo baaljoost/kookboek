@@ -34,6 +34,7 @@ interface FormData {
   herkomstUrl: string;
   ingebrachtDoor: string;
   tags: string;
+  benodigdheden: string;
   ingredienten: Ingredient[];
   stappen: Stap[];
   fotos: Foto[];
@@ -253,6 +254,7 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
     herkomstUrl: initieleWaarden?.herkomstUrl ?? "",
     ingebrachtDoor: initieleWaarden?.ingebrachtDoor ?? "",
     tags: initieleWaarden?.tags ?? "",
+    benodigdheden: initieleWaarden?.benodigdheden ?? "",
     ingredienten: initieleWaarden?.ingredienten ?? [leegIngredient()],
     stappen: initieleWaarden?.stappen ?? [legeStap()],
     fotos: initieleWaarden?.fotos ?? [],
@@ -318,6 +320,10 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
       tags: formData.tags
         .split(",")
         .map((t) => t.trim())
+        .filter(Boolean),
+      benodigdheden: formData.benodigdheden
+        .split(",")
+        .map((s) => s.trim())
         .filter(Boolean),
       ingredienten: formData.ingredienten.filter((ing) => ing.naam.trim()),
       stappen: formData.stappen.filter((s) => s.tekst.trim()),
@@ -529,6 +535,16 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
               onChange={(e) => setVeld("tags", e.target.value)}
               className="input"
               placeholder="vegetarisch, makkelijk, snel"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="label">Benodigdheden (kommagescheiden, optioneel)</label>
+            <input
+              type="text"
+              value={formData.benodigdheden}
+              onChange={(e) => setVeld("benodigdheden", e.target.value)}
+              className="input"
+              placeholder="snelkookpan, keukenmixer, springvorm"
             />
           </div>
         </div>

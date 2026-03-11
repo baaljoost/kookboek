@@ -22,6 +22,7 @@ model Recept {
   goedgekeurd     Boolean       @default(true) // false = wacht op goedkeuring
   voorstelNaam    String?       // naam + bericht van indiener (alleen bij voorstellen)
   voorstelBericht String?
+  benodigdheden   String[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -104,6 +105,7 @@ enum VoorstelStatus {
 model ImportMelding {
   id        Int      @id @default(autoincrement())
   url       String
+  naam      String?  // naam van indiener (optioneel)
   bron      String   // "voorstellen" of "admin"
   createdAt DateTime @default(now())
 }

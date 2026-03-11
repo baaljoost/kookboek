@@ -24,6 +24,7 @@ interface FormData {
   herkomstNaam: string;
   herkomstUrl: string;
   fotoUrl: string;
+  benodigdheden: string;
   ingredienten: Ingredient[];
   stappen: Stap[];
 }
@@ -37,13 +38,29 @@ const leegIngredient = (): Ingredient => ({
 
 const legeStap = (): Stap => ({ tekst: "" });
 
+const initieleFormData = (): FormData => ({
+  titel: "",
+  categorie: Categorie.PASTA,
+  porties: "",
+  bereidingstijd: "",
+  herkomstNaam: "",
+  herkomstUrl: "",
+  fotoUrl: "",
+  benodigdheden: "",
+  ingredienten: [leegIngredient()],
+  stappen: [legeStap()],
+});
+
 export default function VoorstelFormulier() {
   const [popupOpen, setPopupOpen] = useState(false);
   const [receptData, setReceptData] = useState<object | null>(null);
   const [fout, setFout] = useState("");
   const [importUrl, setImportUrl] = useState("");
   const [importBezig, setImportBezig] = useState(false);
-  const [importFout, setImportFout] = useState("");
+  const [importFout, setImportFout] = useState(false);
+  const [importFoutNaam, setImportFoutNaam] = useState("");
+  const [importNaamVerzonden, setImportNaamVerzonden] = useState(false);
+  const [importNaamBezig, setImportNaamBezig] = useState(false);
   const [fotoBezig, setFotoBezig] = useState(false);
   const [fotoFout, setFotoFout] = useState("");
   const [basisInfoOpen, setBasisInfoOpen] = useState(false);
@@ -51,7 +68,9 @@ export default function VoorstelFormulier() {
   async function handleImport() {
     if (!importUrl.trim()) return;
     setImportBezig(true);
-    setImportFout("");
+    setImportFout(false);
+    setImportNaamVerzonden(false);
+    setImportFoutNaam("");
 
     // Probeer de pagina vanuit de browser te laden (omzeilt bot-detectie, werkt voor CSR-sites)
     let jsonLdStrings: string[] | null = null;
@@ -82,17 +101,7 @@ export default function VoorstelFormulier() {
     const data = await res.json();
 
     if (!res.ok) {
-      // Sla de mislukte URL op zodat de admin deze kan bekijken
-      fetch("/api/import-meldingen", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: importUrl.trim(), bron: "voorstellen" }),
-      }).catch(() => {});
-
-      setImportFout(
-        "Het automatisch importeren is mislukt. Joost zal het recept handmatig toevoegen. " +
-        "Je kunt het recept ook zelf invullen in onderstaand formulier."
-      );
+      setImportFout(true);
       if (data.partialData) {
         const pd = data.partialData;
         setFormData((prev) => ({
@@ -127,17 +136,24 @@ export default function VoorstelFormulier() {
     setBasisInfoOpen(true);
   }
 
-  const [formData, setFormData] = useState<FormData>({
-    titel: "",
-    categorie: Categorie.PASTA,
-    porties: "",
-    bereidingstijd: "",
-    herkomstNaam: "",
-    herkomstUrl: "",
-    fotoUrl: "",
-    ingredienten: [leegIngredient()],
-    stappen: [legeStap()],
-  });
+  async function handleImportMeldingVerzenden() {
+    if (!importFoutNaam.trim()) return;
+    setImportNaamBezig(true);
+    await fetch("/api/import-meldingen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: importUrl.trim(), bron: "voorstellen", naam: importFoutNaam.trim() }),
+    }).catch(() => {});
+    setImportNaamBezig(false);
+    setImportNaamVerzonden(true);
+  }
+
+  const [formData, setFormData] = useState<FormData>(initieleFormData());
+
+  function wisAlleVelden() {
+    setFormData(initieleFormData());
+    setFout("");
+  }
 
   async function handleFotoUpload(bestand: File) {
     setFotoBezig(true);
@@ -212,6 +228,10 @@ export default function VoorstelFormulier() {
       ...formData,
       porties: formData.porties ? parseInt(formData.porties) : null,
       bereidingstijd: formData.bereidingstijd ? parseInt(formData.bereidingstijd) : null,
+      benodigdheden: formData.benodigdheden
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
       ingredienten: geldigeIngredienten,
       stappen: geldigeStappen,
     };
@@ -249,7 +269,36 @@ export default function VoorstelFormulier() {
             </button>
           </div>
           {importFout && (
-            <p className="text-red-600 text-xs mt-2">{importFout}</p>
+            <div className="mt-3 p-4 bg-amber-50 border border-amber-200">
+              {importNaamVerzonden ? (
+                <p className="text-sm text-green-700">
+                  Link verstuurd! Joost voegt het recept toe.
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-neutral-700 mb-3">
+                    Het recept kan niet automatisch worden opgehaald. Vul je naam in, dan wordt de link naar Joost gestuurd en zal hij het recept toevoegen!
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={importFoutNaam}
+                      onChange={(e) => setImportFoutNaam(e.target.value)}
+                      placeholder="Jouw naam"
+                      className="input flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleImportMeldingVerzenden}
+                      disabled={importNaamBezig || !importFoutNaam.trim()}
+                      className="btn-primary whitespace-nowrap disabled:opacity-50"
+                    >
+                      {importNaamBezig ? "Versturen…" : "Verstuur"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </section>
 
@@ -270,6 +319,16 @@ export default function VoorstelFormulier() {
 
           {basisInfoOpen && (
             <div className="space-y-10 mt-4">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={wisAlleVelden}
+                  className="text-xs text-neutral-400 hover:text-red-500 transition-colors"
+                >
+                  Wis alle velden
+                </button>
+              </div>
+
               {/* Basisvelden */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -448,6 +507,23 @@ export default function VoorstelFormulier() {
                 >
                   + Stap toevoegen
                 </button>
+              </div>
+
+              {/* Benodigdheden */}
+              <div>
+                <h3 className="font-serif text-xl text-neutral-900 mb-4 pb-2 border-b border-neutral-100">
+                  Benodigdheden (optioneel)
+                </h3>
+                <label className="text-xs text-neutral-400 mb-2 block">
+                  Speciale apparatuur of keukengerei, kommagescheiden
+                </label>
+                <input
+                  type="text"
+                  value={formData.benodigdheden}
+                  onChange={(e) => setVeld("benodigdheden", e.target.value)}
+                  className="input"
+                  placeholder="Bijv. snelkookpan, keukenmixer, springvorm"
+                />
               </div>
 
               {/* Foto */}

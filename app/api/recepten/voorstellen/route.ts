@@ -21,6 +21,7 @@ interface ReceptData {
   herkomstNaam?: string;
   herkomstUrl?: string;
   fotoUrl?: string;
+  benodigdheden?: string[];
   ingredienten?: Ingredient[];
   stappen?: Stap[];
 }
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
           bereidingstijd: receptData.bereidingstijd ?? null,
           herkomstNaam: receptData.herkomstNaam ?? null,
           herkomstUrl: receptData.herkomstUrl ?? null,
+          benodigdheden: receptData.benodigdheden ?? [],
           ingebrachtDoor: naam.trim(),
           goedgekeurd: false,
           voorstelNaam: naam.trim(),
