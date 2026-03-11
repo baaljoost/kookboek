@@ -134,6 +134,7 @@ async function start() {
   // (omzeilt botdetectie: de browser heeft de pagina al geladen)
   let jsonLdStrings = null; // null = executeScript niet geprobeerd/mislukt
   let ogImage = null;
+  let pageHtml = null;
   try {
     const results = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
@@ -142,11 +143,14 @@ async function start() {
           .map((s) => s.textContent || "")
           .filter(Boolean);
         const og = document.querySelector('meta[property="og:image"]')?.content || null;
-        return { scripts, ogImage: og };
+        // Stuur ook de gerenderde HTML mee als fallback voor sites zonder JSON-LD
+        const html = document.documentElement.outerHTML.slice(0, 300000);
+        return { scripts, ogImage: og, html };
       },
     });
     jsonLdStrings = results[0]?.result?.scripts || [];
     ogImage = results[0]?.result?.ogImage || null;
+    pageHtml = results[0]?.result?.html || null;
   } catch (err) {
     // executeScript mislukt (bv. chrome:// pagina's of ontbrekende permissie)
     console.warn("executeScript mislukt:", err);
@@ -158,7 +162,7 @@ async function start() {
     const res = await fetch(`${kookboekUrl}/api/admin/importeer`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: tabUrl, jsonLdStrings, ogImage }),
+      body: JSON.stringify({ url: tabUrl, jsonLdStrings, ogImage, pageHtml }),
     });
 
     if (!res.ok) {

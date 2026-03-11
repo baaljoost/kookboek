@@ -387,10 +387,11 @@ function vindJsonLdVanString(str: string): JsonLdRecipe | null {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { url, jsonLdStrings, ogImage } = body as {
+  const { url, jsonLdStrings, ogImage, pageHtml } = body as {
     url?: string;
     jsonLdStrings?: string[] | null; // null = extensie kon pagina niet lezen; [] = pagina geladen maar geen JSON-LD
     ogImage?: string | null;
+    pageHtml?: string | null; // gerenderde HTML van de browser (voor sites zonder JSON-LD)
   };
 
   if (!url) {
@@ -408,9 +409,18 @@ export async function POST(request: NextRequest) {
       recept = vindJsonLdVanString(str);
       if (recept) break;
     }
+    // Geen JSON-LD gevonden: probeer de meegestuurde gerenderde HTML te scrapen
+    if (!recept && pageHtml) {
+      recept = vindJsonLd(pageHtml);
+      if (!recept) {
+        const fallback = scrapHtmlFallback(pageHtml, url ?? "");
+        if (fallback) recept = fallback as JsonLdRecipe;
+      }
+      html = pageHtml; // gebruik voor og:image fallback
+    }
     if (!recept) {
       return NextResponse.json(
-        { error: "Geen receptdata gevonden op deze pagina. De site heeft geen receptopmaak (JSON-LD)." },
+        { error: "Geen receptdata gevonden op deze pagina. Vul het recept handmatig in." },
         { status: 422 }
       );
     }
