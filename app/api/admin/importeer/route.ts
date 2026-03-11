@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
 
 interface JsonLdIngredient {
   recipeIngredient?: string[];
@@ -385,6 +386,92 @@ function vindJsonLdVanString(str: string): JsonLdRecipe | null {
   return null;
 }
 
+// Detecteer bot-challenge pagina's (Cloudflare, Akamai, etc.)
+function detecteerBotBlokkade(html: string): boolean {
+  if (!html || html.length < 500) return false;
+  return (
+    /<title[^>]*>\s*(just a moment|attention required|access denied|403 forbidden|blocked)\s*<\/title>/i.test(html)
+    || /cf-browser-verification|cf-challenge-running|cf-turnstile/i.test(html)
+    || /checking if the site connection is secure/i.test(html)
+    || /enable javascript and cookies to continue/i.test(html)
+    || /this page is protected by.*captcha/i.test(html)
+    || /robot.*detected|detected.*robot/i.test(html)
+  );
+}
+
+// Strip HTML naar leesbare plain text voor AI-extractie
+function htmlNaarTekst(html: string, maxChars = 10000): string {
+  // Verwijder noise-elementen
+  const stripped = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<nav[\s\S]*?<\/nav>/gi, " ")
+    .replace(/<header[\s\S]*?<\/header>/gi, " ")
+    .replace(/<footer[\s\S]*?<\/footer>/gi, " ")
+    .replace(/<aside[\s\S]*?<\/aside>/gi, " ");
+
+  // Probeer main content te isoleren
+  const mainMatch =
+    stripped.match(/<(?:main|article)[^>]*>([\s\S]*?)<\/(?:main|article)>/i) ||
+    stripped.match(/class="[^"]*(?:recipe|recept|content|artikel)[^"]*"[^>]*>([\s\S]{500,30000}?)<\/(?:div|section|article)>/i);
+  const bron = mainMatch ? mainMatch[1] : stripped;
+
+  return stripHtml(bron).replace(/\s{3,}/g, "\n").trim().slice(0, maxChars);
+}
+
+// AI-extractie via Claude als JSON-LD en HTML-scraping beide mislukken
+async function extractViaAI(html: string): Promise<JsonLdRecipe | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+
+  const tekst = htmlNaarTekst(html);
+  if (tekst.length < 200) return null;
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const bericht = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 2048,
+      messages: [
+        {
+          role: "user",
+          content: `Extraheer het recept uit deze paginatekst. Geef ALLEEN een JSON-object terug (geen uitleg, geen markdown, geen code blocks).
+
+JSON formaat:
+{
+  "name": "Naam van het recept",
+  "recipeIngredient": ["200 gram bloem", "2 eieren", "snufje zout"],
+  "recipeInstructions": [{"@type": "HowToStep", "text": "Verwarm de oven..."}],
+  "recipeYield": "4",
+  "totalTime": "PT30M",
+  "image": "https://..."
+}
+
+Als er geen recept op de pagina staat, geef dan terug: null
+
+Paginatekst:
+${tekst}`,
+        },
+      ],
+    });
+
+    const respons = bericht.content[0];
+    if (respons.type !== "text") return null;
+
+    const tekst_respons = respons.text.trim();
+    if (tekst_respons === "null" || tekst_respons === "") return null;
+
+    // Verwijder eventuele markdown code blocks die het model toch stuurt
+    const schoon = tekst_respons.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
+    const data = JSON.parse(schoon);
+    if (!data || typeof data !== "object" || !data.name) return null;
+
+    return data as JsonLdRecipe;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const { url, jsonLdStrings, ogImage, pageHtml } = body as {
@@ -416,6 +503,10 @@ export async function POST(request: NextRequest) {
         const fallback = scrapHtmlFallback(pageHtml, url ?? "");
         if (fallback) recept = fallback as JsonLdRecipe;
       }
+      // Laatste redmiddel: AI-extractie van de plain text
+      if (!recept) {
+        recept = await extractViaAI(pageHtml);
+      }
       html = pageHtml; // gebruik voor og:image fallback
     }
     if (!recept) {
@@ -434,9 +525,13 @@ export async function POST(request: NextRequest) {
           "User-Agent":
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Language": "nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7",
           "Accept-Encoding": "gzip, deflate, br",
-          "Cache-Control": "max-age=0",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+          "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+          "Sec-Ch-Ua-Mobile": "?0",
+          "Sec-Ch-Ua-Platform": '"macOS"',
           "Sec-Fetch-Dest": "document",
           "Sec-Fetch-Mode": "navigate",
           "Sec-Fetch-Site": "none",
@@ -454,11 +549,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Detecteer bot-challenge pagina's (Cloudflare, Akamai, etc.)
+    if (detecteerBotBlokkade(html)) {
+      return NextResponse.json(
+        {
+          error:
+            "Deze website blokkeert automatisch ophalen (bot-bescherming). " +
+            "Gebruik de browserextensie terwijl je op de receptenpagina bent.",
+        },
+        { status: 422 }
+      );
+    }
+
     recept = vindJsonLd(html);
 
     if (!recept) {
       const fallback = scrapHtmlFallback(html, url);
       if (fallback) recept = fallback as JsonLdRecipe;
+    }
+
+    // Laatste redmiddel: AI-extractie van de plain text
+    if (!recept) {
+      recept = await extractViaAI(html);
     }
   }
 
@@ -477,15 +589,18 @@ export async function POST(request: NextRequest) {
     const partialStappen = recept ? parseInstructies(recept.recipeInstructions).map((tekst) => ({ tekst }))
       : (html ? extractStappen(html).map((tekst) => ({ tekst })) : []);
 
-    // Detecteer loginpagina (pagina niet bereikbaar zonder inloggen)
+    // Detecteer loginpagina of bot-blokkade
     const isLoginPagina = html && (
       /<title[^>]*>\s*(inloggen|login|sign in|aanmelden)\s*<\/title>/i.test(html)
       || /window\.location.*login/i.test(html)
       || html.length < 20000 && /login|inloggen|sign.in/i.test(html) && !/ingredi/i.test(html)
     );
-    const foutmelding = isLoginPagina
-      ? "Deze pagina vereist inloggen. Gebruik de browserextensie als je al bent ingelogd op de website."
-      : "Geen receptdata gevonden op deze pagina. Vul het recept handmatig in.";
+    const isBotBlokkade = html && detecteerBotBlokkade(html);
+    const foutmelding = isBotBlokkade
+      ? "Deze website blokkeert automatisch ophalen (bot-bescherming). Gebruik de browserextensie terwijl je op de receptenpagina bent."
+      : isLoginPagina
+        ? "Deze pagina vereist inloggen. Gebruik de browserextensie als je al bent ingelogd op de website."
+        : "Geen receptdata gevonden op deze pagina. Vul het recept handmatig in.";
 
     return NextResponse.json(
       {
