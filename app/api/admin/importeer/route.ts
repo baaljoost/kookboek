@@ -39,33 +39,37 @@ function parsePorties(waarde: string | number | string[] | undefined): number | 
   return match ? parseInt(match[0]) : null;
 }
 
+// Detecteer of een tekst eerder op een ingrediënt lijkt dan op een bereidingsstap
+function lijktOpIngredient(tekst: string, ingredientenSet: Set<string>): boolean {
+  const lower = tekst.toLowerCase().trim();
+  // Exacte match met een bekend ingrediënt
+  if (ingredientenSet.has(lower)) return true;
+  // Begint met een typische hoeveelheid-aanduiding (kort = ingrediënt, niet een stap)
+  // Ondersteunt ook "14-ounce" (getal direct gevolgd door koppelteken + eenheid)
+  return (
+    tekst.length < 120 &&
+    /^[\d½¼¾⅓⅔\u2150-\u215E\/\s-]*([\d]+[-\s])(cup|cups|tsp|tbsp|gram|g\b|kg|ml|oz|lb|ounce|ounces|pound|pounds|tablespoon|tablespoons|teaspoon|teaspoons|pkg|package|pinch|dash)/i.test(tekst)
+  );
+}
+
+function maakIngredientenSet(recipeIngredient?: string[]): Set<string> {
+  return new Set((recipeIngredient ?? []).map((s) => s.toLowerCase().trim()));
+}
+
 function parseInstructies(
   instructies: string | string[] | JsonLdInstruction[] | undefined,
   recipeIngredient?: string[]
 ): string[] {
   if (!instructies) return [];
 
-  // Helper: detecteer of een tekst eerder op een ingrediënt lijkt dan op een bereidingsstap
-  const ingredientenSet = new Set(
-    (recipeIngredient ?? []).map((s) => s.toLowerCase().trim())
-  );
-  function lijktOpIngredient(tekst: string): boolean {
-    const lower = tekst.toLowerCase().trim();
-    // Exacte match met een bekend ingrediënt
-    if (ingredientenSet.has(lower)) return true;
-    // Begint met een typische hoeveelheid-aanduiding (kort = ingrediënt, niet een stap)
-    // Ondersteunt ook "14-ounce" (getal direct gevolgd door koppelteken + eenheid)
-    return (
-      tekst.length < 120 &&
-      /^[\d½¼¾⅓⅔\u2150-\u215E\/\s-]*([\d]+[-\s])(cup|cups|tsp|tbsp|gram|g\b|kg|ml|oz|lb|ounce|ounces|pound|pounds|tablespoon|tablespoons|teaspoon|teaspoons|pkg|package|pinch|dash)/i.test(tekst)
-    );
-  }
+  const ingredientenSet = maakIngredientenSet(recipeIngredient);
+  const isIngr = (t: string) => lijktOpIngredient(t, ingredientenSet);
 
   if (typeof instructies === "string") {
     return instructies
       .split(/\n+/)
       .map((s) => s.replace(/^\d+[\.\)]\s*/, "").trim())
-      .filter((s) => s.length > 10 && !lijktOpIngredient(s));
+      .filter((s) => s.length > 10 && !isIngr(s));
   }
 
   if (Array.isArray(instructies)) {
@@ -73,11 +77,11 @@ function parseInstructies(
     for (const item of instructies) {
       if (typeof item === "string") {
         const trimmed = item.trim();
-        if (trimmed && !lijktOpIngredient(trimmed)) stappen.push(trimmed);
+        if (trimmed && !isIngr(trimmed)) stappen.push(trimmed);
       } else if (item["@type"] === "HowToStep") {
         // Filter ook HowToStep items die eigenlijk ingrediënten zijn
         // (sommige sites zoals andrewzimmern.com stoppen ingrediënten als HowToStep in recipeInstructions)
-        if (item.text && !lijktOpIngredient(item.text.trim())) stappen.push(item.text.trim());
+        if (item.text && !isIngr(item.text.trim())) stappen.push(item.text.trim());
       } else if (item["@type"] === "HowToSection" && item.itemListElement) {
         // Sla secties over die als ingrediënten-sectie zijn gelabeld (veelvoorkomende bug in recipe plugins)
         const sectionName = (item.name ?? "").toLowerCase();
@@ -676,7 +680,11 @@ export async function POST(request: NextRequest) {
   // 2. Probeer AI als HTML ook leeg geeft
   // 3. Return foutmelding met partialData als alles mislukt
   if (stappen.length === 0 && html) {
-    const htmlStappen = extractStappen(html);
+    // Pas dezelfde ingrediëntfilter toe op HTML-gescrapte stappen
+    const ingredientenSet = maakIngredientenSet(recept.recipeIngredient);
+    const htmlStappen = extractStappen(html).filter(
+      (s) => !lijktOpIngredient(s, ingredientenSet)
+    );
     if (htmlStappen.length > 0) {
       stappen = htmlStappen;
     } else {
