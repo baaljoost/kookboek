@@ -39,11 +39,15 @@ export default function FotoEditor({
   const [cropModus, setCropModus] = useState(false);
 
   // Laad afbeelding
+  // Cache-buster nodig: iOS Safari hergebruikt anders de gecachede versie
+  // van de <Image>-tag (zonder CORS-headers), waardoor de canvas tainted wordt
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => setAfbeelding(img);
-    img.src = fotoUrl;
+    img.onerror = () => setFout("Afbeelding laden mislukt (CORS?)");
+    const sep = fotoUrl.includes("?") ? "&" : "?";
+    img.src = `${fotoUrl}${sep}_t=${Date.now()}`;
   }, [fotoUrl]);
 
   // Teken canvas
@@ -265,10 +269,13 @@ export default function FotoEditor({
         body: fd,
       });
 
-      if (!res.ok) throw new Error("Upload mislukt");
+      if (!res.ok) {
+        const tekst = await res.text().catch(() => "");
+        throw new Error(`Upload mislukt (${res.status})${tekst ? `: ${tekst}` : ""}`);
+      }
       onOpgeslagen();
     } catch (e) {
-      setFout(e instanceof Error ? e.message : "Opslaan mislukt");
+      setFout(e instanceof Error ? e.message : String(e));
     }
     setBezig(false);
   }
