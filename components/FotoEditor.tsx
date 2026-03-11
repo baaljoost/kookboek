@@ -213,7 +213,7 @@ export default function FotoEditor({
   }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
       <div className="bg-white w-full max-w-2xl mx-4 shadow-xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
