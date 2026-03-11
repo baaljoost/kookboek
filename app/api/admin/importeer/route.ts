@@ -365,48 +365,82 @@ function extractFotoUrl(jsonLd: JsonLdRecipe): string | null {
   return null;
 }
 
+// Parseer één JSON-LD string naar een RecipeObject (of null)
+function vindJsonLdVanString(str: string): JsonLdRecipe | null {
+  try {
+    const cleaned = str.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, " ");
+    const data = JSON.parse(cleaned);
+    if (data["@type"] === "Recipe") return data as JsonLdRecipe;
+    if (Array.isArray(data)) {
+      const r = data.find((item) => item["@type"] === "Recipe");
+      if (r) return r as JsonLdRecipe;
+    }
+    if (data["@graph"] && Array.isArray(data["@graph"])) {
+      const r = data["@graph"].find((item: { "@type": string }) => item["@type"] === "Recipe");
+      if (r) return r as JsonLdRecipe;
+    }
+  } catch {
+    // ongeldige JSON
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
-  const { url } = await request.json();
+  const body = await request.json();
+  const { url, jsonLdStrings, ogImage } = body as {
+    url?: string;
+    jsonLdStrings?: string[];
+    ogImage?: string | null;
+  };
 
   if (!url) {
     return NextResponse.json({ error: "Geen URL opgegeven" }, { status: 400 });
   }
 
-  let html: string;
-  try {
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Cache-Control": "max-age=0",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Upgrade-Insecure-Requests": "1",
-      },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    html = await res.text();
-  } catch (err) {
-    return NextResponse.json(
-      { error: `Kon pagina niet ophalen: ${err instanceof Error ? err.message : String(err)}` },
-      { status: 422 }
-    );
+  let recept: JsonLdRecipe | null = null;
+  let html = "";
+
+  // Stap 1: gebruik JSON-LD die de browser-extensie direct uit de DOM heeft gehaald
+  if (jsonLdStrings && jsonLdStrings.length > 0) {
+    for (const str of jsonLdStrings) {
+      recept = vindJsonLdVanString(str);
+      if (recept) break;
+    }
   }
 
-  // Stap 1: probeer JSON-LD
-  let recept = vindJsonLd(html);
-
-  // Stap 2: probeer HTML-fallback scraping
+  // Stap 2: server-side fetch als fallback (geen JSON-LD uit browser ontvangen)
   if (!recept) {
-    const fallback = scrapHtmlFallback(html, url);
-    if (fallback) {
-      recept = fallback as JsonLdRecipe;
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Encoding": "gzip, deflate, br",
+          "Cache-Control": "max-age=0",
+          "Sec-Fetch-Dest": "document",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Site": "none",
+          "Sec-Fetch-User": "?1",
+          "Upgrade-Insecure-Requests": "1",
+        },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      html = await res.text();
+    } catch (err) {
+      return NextResponse.json(
+        { error: `Kon pagina niet ophalen: ${err instanceof Error ? err.message : String(err)}` },
+        { status: 422 }
+      );
+    }
+
+    recept = vindJsonLd(html);
+
+    if (!recept) {
+      const fallback = scrapHtmlFallback(html, url);
+      if (fallback) recept = fallback as JsonLdRecipe;
     }
   }
 
@@ -430,9 +464,12 @@ export async function POST(request: NextRequest) {
   const ingredienten = (recept.recipeIngredient ?? []).map(parseIngredient);
   const stappen = parseInstructies(recept.recipeInstructions);
 
-  // Foto: JSON-LD image veld, anders og:image als fallback
+  // Foto: JSON-LD image veld → og:image van extensie → og:image uit HTML
   let fotoUrl = extractFotoUrl(recept);
-  if (!fotoUrl) {
+  if (!fotoUrl && ogImage) {
+    fotoUrl = ogImage;
+  }
+  if (!fotoUrl && html) {
     const ogMatch = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i)
       || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/i);
     fotoUrl = ogMatch ? ogMatch[1] : null;

@@ -116,26 +116,47 @@ function toonSucces(receptUrl) {
 async function start() {
   toonLaden();
 
-  let tabUrl;
+  let tab;
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    tabUrl = tab?.url;
+    [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   } catch {
     toonFout("Kon de pagina-URL niet ophalen.");
     return;
   }
 
+  const tabUrl = tab?.url;
   if (!tabUrl || (!tabUrl.startsWith("http://") && !tabUrl.startsWith("https://"))) {
     toonFout("Open een receptenpagina in je browser om te importeren.");
     return;
   }
 
-  // Roep de importeer API aan
+  // Extraheer JSON-LD direct uit de DOM van de geopende tab
+  // (omzeilt botdetectie: de browser heeft de pagina al geladen)
+  let jsonLdStrings = [];
+  let ogImage = null;
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const scripts = [...document.querySelectorAll('script[type="application/ld+json"]')]
+          .map((s) => s.textContent || "")
+          .filter(Boolean);
+        const og = document.querySelector('meta[property="og:image"]')?.content || null;
+        return { scripts, ogImage: og };
+      },
+    });
+    jsonLdStrings = results[0]?.result?.scripts || [];
+    ogImage = results[0]?.result?.ogImage || null;
+  } catch {
+    // executeScript mislukt (bv. chrome:// pagina's) – fallback naar server fetch
+  }
+
+  // Stuur naar de importeer API (met JSON-LD uit browser of fallback naar server fetch)
   try {
     const res = await fetch(`${kookboekUrl}/api/admin/importeer`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: tabUrl }),
+      body: JSON.stringify({ url: tabUrl, jsonLdStrings, ogImage }),
     });
 
     if (!res.ok) {
@@ -146,7 +167,7 @@ async function start() {
 
     const data = await res.json();
     toonPreview(data);
-  } catch (err) {
+  } catch {
     toonFout(
       `Kan het kookboek niet bereiken.\n\nURL: ${kookboekUrl}\n\nControleer de instellingen of je internetverbinding.`
     );
