@@ -149,7 +149,14 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
     const data = await res.json();
 
     if (!res.ok) {
-      setImportFout(data.error ?? "Importeren mislukt");
+      // Sla de mislukte URL op in de import-meldingen lijst
+      fetch("/api/import-meldingen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: importUrl.trim(), bron: "admin" }),
+      }).catch(() => {});
+
+      setImportFout(data.error ?? "Importeren mislukt. De URL is opgeslagen onder Import-meldingen.");
       if (data.partialData) {
         const pd = data.partialData;
         setFormData((prev) => ({

@@ -14,9 +14,11 @@ export default async function AdminReceptenPage() {
     include: { fotos: { take: 1, orderBy: { volgorde: "asc" } } },
   });
 
-  const aantalVoorgesteld = await prisma.voorgesteldRecept.count({ where: { status: "WACHT" } });
-
-  const cookieStore = await cookies();
+  const [aantalVoorgesteld, aantalImportMeldingen, cookieStore] = await Promise.all([
+    prisma.voorgesteldRecept.count({ where: { status: "WACHT" } }),
+    prisma.importMelding.count(),
+    cookies(),
+  ]);
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
 
   return (
@@ -35,7 +37,7 @@ export default async function AdminReceptenPage() {
             + Nieuw recept
           </Link>
         </div>
-        <AdminNav isBeheerder={isBeheerder} aantalVoorgesteld={aantalVoorgesteld} />
+        <AdminNav isBeheerder={isBeheerder} aantalVoorgesteld={aantalVoorgesteld} aantalImportMeldingen={aantalImportMeldingen} />
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">

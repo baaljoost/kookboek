@@ -101,6 +101,13 @@ enum VoorstelStatus {
   AFGEWEZEN
 }
 
+model ImportMelding {
+  id        Int      @id @default(autoincrement())
+  url       String
+  bron      String   // "voorstellen" of "admin"
+  createdAt DateTime @default(now())
+}
+
 enum Categorie {
   PASTA
   CURRY

@@ -7,9 +7,10 @@ import { useState } from "react";
 interface Props {
   isBeheerder: boolean;
   aantalVoorgesteld: number;
+  aantalImportMeldingen?: number;
 }
 
-export default function AdminNav({ isBeheerder, aantalVoorgesteld }: Props) {
+export default function AdminNav({ isBeheerder, aantalVoorgesteld, aantalImportMeldingen }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [toggling, setToggling] = useState(false);
@@ -64,6 +65,17 @@ export default function AdminNav({ isBeheerder, aantalVoorgesteld }: Props) {
             </span>
           )}
           {navLink("/admin/opmerkingen", "Opmerkingen")}
+          {navLink(
+            "/admin/import-meldingen",
+            <span className="flex items-center gap-1.5">
+              Imports
+              {(aantalImportMeldingen ?? 0) > 0 && (
+                <span className="bg-neutral-400 text-white text-xs rounded-full px-1.5 py-0.5 leading-none font-sans font-normal">
+                  {aantalImportMeldingen}
+                </span>
+              )}
+            </span>
+          )}
         </div>
 
         {/* Rechts: toggle + uitloggen */}
