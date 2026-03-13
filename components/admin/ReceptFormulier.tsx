@@ -157,7 +157,7 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
         body: JSON.stringify({ url: importUrl.trim(), bron: "admin" }),
       }).catch(() => {});
 
-      setImportFout(data.error ?? "Importeren mislukt. De URL is opgeslagen onder Import-meldingen.");
+      setImportFout((data.error ? data.error + " " : "Importeren mislukt. ") + "De URL is opgeslagen onder Import-meldingen.");
       if (data.partialData) {
         const pd = data.partialData;
         setFormData((prev) => ({
