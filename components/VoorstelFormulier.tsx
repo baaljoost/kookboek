@@ -98,9 +98,22 @@ export default function VoorstelFormulier() {
       body: JSON.stringify({ url: importUrl.trim(), jsonLdStrings, pageHtml }),
     });
 
-    const data = await res.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let data: any = {};
+    try {
+      data = await res.json();
+    } catch {
+      // Response was geen JSON (bijv. Vercel timeout) — behandel als generieke fout
+    }
 
     if (!res.ok) {
+      // Sla de URL direct op als backup, ook zonder naam
+      fetch("/api/import-meldingen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: importUrl.trim(), bron: "voorstellen" }),
+      }).catch(() => {});
+
       setImportFout(true);
       if (data.partialData) {
         const pd = data.partialData;
