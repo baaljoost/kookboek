@@ -113,7 +113,7 @@ export default function VoorstelFormulier() {
           ingredienten: pd.ingredienten?.length ? pd.ingredienten : prev.ingredienten,
           stappen: pd.stappen?.length ? pd.stappen : prev.stappen,
         }));
-        setBasisInfoOpen(true);
+        // Formulier NIET automatisch openen bij fout — de naam-prompt moet zichtbaar blijven
       }
       setImportBezig(false);
       return;
