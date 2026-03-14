@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useEenheid } from "./EenheidContext";
-import { converteerEenheid, converteerStapTekst } from "@/lib/unitConversie";
+import { converteerIngredientVeld, converteerStapTekst } from "@/lib/unitConversie";
 
 interface Ingredient {
   id: number;
@@ -96,32 +96,36 @@ export default function PortieSchuif({
               : null;
 
           // Apply unit conversion if metrisch is enabled
-          const { hoeveelheid: convertedHoeveelheid, eenheid: convertedEenheid } =
-            metrisch && geschaaldHoeveelheid != null
-              ? converteerEenheid(parseFloat(geschaaldHoeveelheid), ing.eenheid)
-              : {
-                  hoeveelheid: geschaaldHoeveelheid
-                    ? parseFloat(geschaaldHoeveelheid)
-                    : null,
-                  eenheid: ing.eenheid,
-                };
+          const converted = metrisch && geschaaldHoeveelheid != null
+            ? converteerIngredientVeld(
+                parseFloat(geschaaldHoeveelheid),
+                ing.eenheid,
+                ing.naam
+              )
+            : {
+                hoeveelheid: geschaaldHoeveelheid
+                  ? parseFloat(geschaaldHoeveelheid)
+                  : null,
+                eenheid: ing.eenheid,
+                naam: ing.naam,
+              };
 
-          const convertedNaam = metrisch ? converteerStapTekst(ing.naam) : ing.naam;
-          const convertedNotitie = metrisch && ing.notitie ? converteerStapTekst(ing.notitie) : ing.notitie;
+          const convertedNotitie =
+            metrisch && ing.notitie ? converteerStapTekst(ing.notitie) : ing.notitie;
 
           return (
             <li key={ing.id} className="text-sm text-neutral-700 flex gap-2">
               <span className="font-medium text-neutral-900 whitespace-nowrap">
-                {convertedHoeveelheid != null
+                {converted.hoeveelheid != null
                   ? `${
-                      convertedHoeveelheid === Math.round(convertedHoeveelheid)
-                        ? Math.round(convertedHoeveelheid)
-                        : convertedHoeveelheid
-                    }${convertedEenheid ? ` ${convertedEenheid}` : ""}`
-                  : convertedEenheid ?? ""}
+                      converted.hoeveelheid === Math.round(converted.hoeveelheid)
+                        ? Math.round(converted.hoeveelheid)
+                        : converted.hoeveelheid
+                    }${converted.eenheid ? ` ${converted.eenheid}` : ""}`
+                  : converted.eenheid ?? ""}
               </span>
               <span>
-                {convertedNaam}
+                {converted.naam}
                 {convertedNotitie && (
                   <span className="text-neutral-400">, {convertedNotitie}</span>
                 )}
