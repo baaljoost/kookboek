@@ -280,10 +280,11 @@ export function converteerIngredientVeld(
   const byEenheid = converteerEenheid(geschaaldHoeveelheid, eenheid);
   if (byEenheid.eenheid !== eenheid) {
     // Eenheid was converted (e.g., "oz" → "g")
+    // Also convert any American units in naam (e.g., "(16 oz) blocks" → "(454g) blocks")
     return {
       hoeveelheid: byEenheid.hoeveelheid,
       eenheid: byEenheid.eenheid,
-      naam,
+      naam: converteerStapTekst(naam),
     };
   }
 
