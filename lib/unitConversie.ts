@@ -297,7 +297,19 @@ export function converteerIngredientVeld(
     return { hoeveelheid: geschaaldHoeveelheid, eenheid, naam };
   }
 
-  // Conversion happened - try to parse back into hoeveelheid/eenheid/naam
+  // Conversion happened - check if it's just the naam that was converted
+  const expectedPrefix = `${geschaaldHoeveelheid}${eenheid ? ` ${eenheid}` : ""} `;
+  if (converted.startsWith(expectedPrefix)) {
+    // Only naam was converted (e.g., "2 (16 oz) blocks" → "2 (454g) blocks")
+    const convertedNaam = converted.substring(expectedPrefix.length);
+    return {
+      hoeveelheid: geschaaldHoeveelheid,
+      eenheid,
+      naam: convertedNaam,
+    };
+  }
+
+  // Full conversion with reparsing for cases like "8 ounces pasta" → "227g pasta"
   // Match pattern like "227g pasta" or "59 ml rest"
   const match = converted.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z°]+)\s*(.*)/);
   if (match) {
