@@ -201,8 +201,20 @@ function converteerGewicht(tekst: string): string {
 
 // Convert length in text (inch → cm)
 function converteerLengte(tekst: string): string {
-  // inch/inches/" → cm (supports fractions like "1/2 inch", with optional dash like "4-inch")
-  return tekst.replace(
+  // Handle ranges like "3- to 4-inch" → "8- to 10cm"
+  tekst = tekst.replace(
+    /(\d+(?:\/\d+)?)\s*-\s*to\s+(\d+(?:\/\d+)?)\s*(?:inch|inches|")/gi,
+    (match, startAmount, endAmount) => {
+      const startInch = parseGetal(startAmount);
+      const endInch = parseGetal(endAmount);
+      const startCm = Math.round(startInch * 2.54 * 10) / 10;
+      const endCm = Math.round(endInch * 2.54 * 10) / 10;
+      return `${startCm}- to ${endCm}cm`;
+    }
+  );
+
+  // Handle single values like "1/2 inch", "4-inch"
+  tekst = tekst.replace(
     /(\d+(?:\/\d+)?)\s*-?\s*(inch|inches|")\b/gi,
     (match, amount) => {
       const inch = parseGetal(amount);
@@ -210,6 +222,8 @@ function converteerLengte(tekst: string): string {
       return `${cm}cm`;
     }
   );
+
+  return tekst;
 }
 
 // Convert volume in text (cup → ml, fl oz → ml, quart → ml)
