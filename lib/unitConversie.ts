@@ -3,6 +3,8 @@
 export interface IngredientForConversion {
   hoeveelheid: number | null;
   eenheid: string | null;
+  naam?: string;
+  notitie?: string | null;
 }
 
 export interface StepForConversion {
@@ -32,6 +34,19 @@ export function heeftAmerikaanseEenheden(
     '"',
   ];
 
+  // Patterns for detecting American units in any text
+  const amerikaansePatterns = [
+    /\d+\s*(?:degrees?\s+)?(?:°\s*)?(?:F|Fahrenheit)\b/i, // Fahrenheit variants
+    /\d+\s*(?:\.\d+)?\s*(oz|ounce|ounces)\b/i, // ounces
+    /\d+\s*(?:\.\d+)?\s*(lb|lbs)\b/i, // pounds
+    /\d+\s*(?:\.\d+)?\s*(inch|inches|")\b/i, // inches
+    /\d+\s*(?:\.\d+)?\s*cups?\b/i, // cups
+    /\d+\s*(?:\.\d+)?\s*(?:fl\.?\s*oz|fl\s+oz)/i, // fl oz
+    /\d+\s*(?:\.\d+)?\s*(?:tbsp|tablespoons?)\b/i, // tablespoon
+    /\d+\s*(?:\.\d+)?\s*(?:tsp|teaspoons?)\b/i, // teaspoon
+  ];
+
+  // Check ingredient eenheid field
   for (const ing of ingredienten) {
     if (ing.eenheid) {
       const lower = ing.eenheid.toLowerCase();
@@ -39,18 +54,15 @@ export function heeftAmerikaanseEenheden(
         return true;
       }
     }
+
+    // Check naam and notitie fields for American units
+    const textToCheck = `${ing.naam || ""} ${ing.notitie || ""}`.toLowerCase();
+    if (amerikaansePatterns.some((p) => p.test(textToCheck))) {
+      return true;
+    }
   }
 
-  // Check step text for Fahrenheit, oz, inch patterns
-  const amerikaansePatterns = [
-    /°?F\b/, // Fahrenheit
-    /\d+\s*(oz|ounce|ounces)\b/i, // ounces
-    /\d+\s*(lb|lbs)\b/i, // pounds
-    /\d+\s*(inch|inches|")\b/i, // inches
-    /\d+\s*cups?\b/i, // cups
-    /\d+\s*fl\.?\s*oz/i, // fl oz
-  ];
-
+  // Check step text for American patterns
   for (const stap of stappen) {
     if (amerikaansePatterns.some((p) => p.test(stap.tekst))) {
       return true;
@@ -129,12 +141,15 @@ export function converteerEenheid(
 
 // Convert temperature in text (°F → °C)
 function converteerTemperatuur(tekst: string): string {
-  // Match patterns like "350°F", "350 F", "350F"
-  return tekst.replace(/(\d+(?:\.\d+)?)\s*°?F\b/g, (match, fahrenheit) => {
-    const f = parseFloat(fahrenheit);
-    const c = Math.round(((f - 32) * 5) / 9);
-    return `${c}°C`;
-  });
+  // Match patterns like "350°F", "350 F", "350F", "350 degrees F", "350 degrees Fahrenheit"
+  return tekst.replace(
+    /(\d+(?:\.\d+)?)\s*(?:degrees?\s+)?(?:°\s*)?(?:F(?:ahrenheit)?)\b/gi,
+    (match, fahrenheit) => {
+      const f = parseFloat(fahrenheit);
+      const c = Math.round(((f - 32) * 5) / 9);
+      return `${c}°C`;
+    }
+  );
 }
 
 // Convert weight in text (oz → g, lb → g)

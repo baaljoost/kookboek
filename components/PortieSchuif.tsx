@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useEenheid } from "./EenheidContext";
-import { converteerEenheid } from "@/lib/unitConversie";
+import { converteerEenheid, converteerStapTekst } from "@/lib/unitConversie";
 
 interface Ingredient {
   id: number;
@@ -70,16 +70,19 @@ export default function PortieSchuif({
       {/* Unit conversion toggle */}
       {heeftAmerikaanseEenheden && (
         <div className="flex items-center gap-3 mb-5 pb-5 border-b border-neutral-100">
-          <label className="flex items-center gap-2 text-sm font-medium text-neutral-900 cursor-pointer select-none">
-            <span className="text-xs text-neutral-500">🇺🇸</span>
-            <input
-              type="checkbox"
-              checked={metrisch}
-              onChange={(e) => setMetrisch(e.target.checked)}
-              className="w-4 h-4 accent-olive-600"
-              aria-label="Metrische eenheden"
-            />
-            <span className="text-xs text-neutral-500">Metrisch</span>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <div className="relative inline-flex h-5 w-9">
+              <input
+                type="checkbox"
+                checked={metrisch}
+                onChange={(e) => setMetrisch(e.target.checked)}
+                className="peer sr-only"
+                aria-label="Omrekenen naar metrisch"
+              />
+              <div className="absolute inset-0 rounded-full bg-neutral-200 transition-colors peer-checked:bg-olive-600" />
+              <div className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
+            </div>
+            <span className="text-xs text-neutral-500">Omrekenen naar metrisch</span>
           </label>
         </div>
       )}
@@ -103,6 +106,9 @@ export default function PortieSchuif({
                   eenheid: ing.eenheid,
                 };
 
+          const convertedNaam = metrisch ? converteerStapTekst(ing.naam) : ing.naam;
+          const convertedNotitie = metrisch && ing.notitie ? converteerStapTekst(ing.notitie) : ing.notitie;
+
           return (
             <li key={ing.id} className="text-sm text-neutral-700 flex gap-2">
               <span className="font-medium text-neutral-900 whitespace-nowrap">
@@ -115,9 +121,9 @@ export default function PortieSchuif({
                   : convertedEenheid ?? ""}
               </span>
               <span>
-                {ing.naam}
-                {ing.notitie && (
-                  <span className="text-neutral-400">, {ing.notitie}</span>
+                {convertedNaam}
+                {convertedNotitie && (
+                  <span className="text-neutral-400">, {convertedNotitie}</span>
                 )}
               </span>
             </li>

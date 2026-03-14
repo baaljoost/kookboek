@@ -50,6 +50,8 @@ export default async function ReceptPagina({
     recept.ingredienten.map((ing) => ({
       hoeveelheid: ing.hoeveelheid,
       eenheid: ing.eenheid,
+      naam: ing.naam,
+      notitie: ing.notitie,
     })),
     recept.stappen.map((stap) => ({ tekst: stap.tekst }))
   );
