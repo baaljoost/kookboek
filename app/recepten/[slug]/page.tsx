@@ -1,11 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { categorieLabels } from "@/lib/categorieLabels";
+import { heeftAmerikaanseEenheden } from "@/lib/unitConversie";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { MODUS_COOKIE, MODUS_BEHEERDER } from "@/lib/modus";
 import PortieSchuif from "@/components/PortieSchuif";
+import StappenLijst from "@/components/StappenLijst";
+import { EenheidProvider } from "@/components/EenheidContext";
 import Sterrenbeoordeling from "@/components/Sterrenbeoordeling";
 import FotoBewerken from "@/components/FotoBewerken";
 import VerwijderReceptKnop from "@/components/VerwijderReceptKnop";
@@ -41,6 +44,15 @@ export default async function ReceptPagina({
   });
 
   if (!recept) notFound();
+
+  // Detect American units in ingredients and steps
+  const heeftAmerikaans = heeftAmerikaanseEenheden(
+    recept.ingredienten.map((ing) => ({
+      hoeveelheid: ing.hoeveelheid,
+      eenheid: ing.eenheid,
+    })),
+    recept.stappen.map((stap) => ({ tekst: stap.tekst }))
+  );
 
   return (
     <div className="min-h-screen bg-cream-50">
@@ -146,16 +158,16 @@ export default async function ReceptPagina({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          {/* Ingrediënten */}
-          <div className="md:col-span-1">
-            <div className="sticky top-6">
-              <h2 className="font-serif text-2xl text-neutral-900 mb-4">
-                Ingrediënten
-              </h2>
-              {recept.porties && (
+        <EenheidProvider>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {/* Ingrediënten */}
+            <div className="md:col-span-1">
+              <div className="sticky top-6">
+                <h2 className="font-serif text-2xl text-neutral-900 mb-4">
+                  Ingrediënten
+                </h2>
                 <PortieSchuif
-                  standaardPorties={recept.porties}
+                  standaardPorties={recept.porties ?? undefined}
                   ingredienten={recept.ingredienten.map((ing) => ({
                     id: ing.id,
                     hoeveelheid: ing.hoeveelheid,
@@ -163,87 +175,60 @@ export default async function ReceptPagina({
                     naam: ing.naam,
                     notitie: ing.notitie,
                   }))}
+                  heeftAmerikaanseEenheden={heeftAmerikaans}
                 />
+              </div>
+            </div>
+
+            {/* Stappen */}
+            <div className="md:col-span-2">
+              <StappenLijst
+                stappen={recept.stappen.map((stap) => ({
+                  id: stap.id,
+                  tekst: stap.tekst,
+                }))}
+              />
+
+              {/* Benodigdheden */}
+              {recept.benodigdheden.length > 0 && (
+                <div className="mt-12 pt-6 border-t border-neutral-200">
+                  <h2 className="font-serif text-2xl text-neutral-900 mb-4">
+                    Benodigdheden
+                  </h2>
+                  <ul className="space-y-1">
+                    {recept.benodigdheden.map((item, i) => (
+                      <li key={i} className="text-sm text-neutral-700 flex gap-2">
+                        <span className="text-neutral-300 select-none">—</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
-              {!recept.porties && (
-                <ul className="space-y-2.5">
-                  {recept.ingredienten.map((ing) => (
-                    <li key={ing.id} className="text-sm text-neutral-700 flex gap-2">
-                      <span className="font-medium text-neutral-900 whitespace-nowrap">
-                        {ing.hoeveelheid
-                          ? `${ing.hoeveelheid}${ing.eenheid ? ` ${ing.eenheid}` : ""}`
-                          : ing.eenheid ?? ""}
-                      </span>
-                      <span>
-                        {ing.naam}
-                        {ing.notitie && (
-                          <span className="text-neutral-400">, {ing.notitie}</span>
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+
+              {/* Herkomst */}
+              {recept.herkomstNaam && (
+                <div className="mt-12 pt-6 border-t border-neutral-200">
+                  <p className="text-xs uppercase tracking-widest text-neutral-400 mb-1">
+                    Bron
+                  </p>
+                  {recept.herkomstUrl ? (
+                    <a
+                      href={recept.herkomstUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-olive-700 hover:underline"
+                    >
+                      {recept.herkomstNaam}
+                    </a>
+                  ) : (
+                    <p className="text-sm text-neutral-600">{recept.herkomstNaam}</p>
+                  )}
+                </div>
               )}
             </div>
           </div>
-
-          {/* Stappen */}
-          <div className="md:col-span-2">
-            <h2 className="font-serif text-2xl text-neutral-900 mb-6">
-              Bereiding
-            </h2>
-            <ol className="space-y-6">
-              {recept.stappen.map((stap, i) => (
-                <li key={stap.id} className="flex gap-4">
-                  <span className="font-serif text-3xl text-neutral-200 leading-none mt-1 select-none w-8 shrink-0">
-                    {i + 1}
-                  </span>
-                  <p className="text-neutral-700 leading-relaxed pt-1">
-                    {stap.tekst}
-                  </p>
-                </li>
-              ))}
-            </ol>
-
-            {/* Benodigdheden */}
-            {recept.benodigdheden.length > 0 && (
-              <div className="mt-12 pt-6 border-t border-neutral-200">
-                <h2 className="font-serif text-2xl text-neutral-900 mb-4">
-                  Benodigdheden
-                </h2>
-                <ul className="space-y-1">
-                  {recept.benodigdheden.map((item, i) => (
-                    <li key={i} className="text-sm text-neutral-700 flex gap-2">
-                      <span className="text-neutral-300 select-none">—</span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Herkomst */}
-            {recept.herkomstNaam && (
-              <div className="mt-12 pt-6 border-t border-neutral-200">
-                <p className="text-xs uppercase tracking-widest text-neutral-400 mb-1">
-                  Bron
-                </p>
-                {recept.herkomstUrl ? (
-                  <a
-                    href={recept.herkomstUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-olive-700 hover:underline"
-                  >
-                    {recept.herkomstNaam}
-                  </a>
-                ) : (
-                  <p className="text-sm text-neutral-600">{recept.herkomstNaam}</p>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+        </EenheidProvider>
 
         {/* Opmerkingen */}
         <div className="mt-16 pt-10 border-t border-neutral-200">
