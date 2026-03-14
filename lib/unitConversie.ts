@@ -47,7 +47,7 @@ export function heeftAmerikaanseEenheden(
   const amerikaansePatterns = [
     /\d+\s*(?:degrees?\s+)?(?:°\s*)?(?:F|Fahrenheit)\b/i, // Fahrenheit variants
     /\d+\s*(?:\.\d+)?\s*(oz|ounce|ounces)\b/i, // ounces
-    /\d+\s*(?:\.\d+)?\s*(lb|lbs)\b/i, // pounds
+    /\d+\s*(?:\.\d+)?\s*(lb|lbs|pounds?)\b/i, // pounds
     /\d+\s*(?:\.\d+)?\s*(inch|inches|")\b/i, // inches
     /\d+\s*(?:\.\d+)?\s*cups?\b/i, // cups
     /\d+\s*(?:\.\d+)?\s*(?:fl\.?\s*oz|fl\s+oz)/i, // fl oz
@@ -98,7 +98,7 @@ export function converteerEenheid(
     };
   }
 
-  if (lower === "lb" || lower === "lbs") {
+  if (lower === "lb" || lower === "lbs" || lower === "pound" || lower === "pounds") {
     return {
       hoeveelheid: hoeveelheid ? Math.round(hoeveelheid * 453.59) : null,
       eenheid: "g",
@@ -174,9 +174,9 @@ function converteerGewicht(tekst: string): string {
     }
   );
 
-  // lb/lbs → g (supports fractions)
+  // lb/lbs/pounds/pound → g (supports fractions)
   tekst = tekst.replace(
-    /(\d+(?:\/\d+)?)\s*(lb|lbs)\b/gi,
+    /(\d+(?:\/\d+)?)\s*(lb|lbs|pounds?)\b/gi,
     (match, amount) => {
       const lb = parseGetal(amount);
       const g = Math.round(lb * 453.59);
