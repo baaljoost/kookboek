@@ -34,8 +34,12 @@ export function heeftAmerikaanseEenheden(
     "floz",
     "lb",
     "lbs",
+    "pound",
+    "pounds",
     "cup",
     "cups",
+    "quart",
+    "quarts",
     "tbsp",
     "tsp",
     "inch",
@@ -48,11 +52,12 @@ export function heeftAmerikaanseEenheden(
     /\d+\s*(?:degrees?\s+)?(?:°\s*)?(?:F|Fahrenheit)\b/i, // Fahrenheit variants
     /\d+\s*(?:\.\d+)?\s*(oz|ounce|ounces)\b/i, // ounces
     /\d+\s*(?:\.\d+)?\s*(lb|lbs|pounds?)\b/i, // pounds
-    /\d+\s*(?:\.\d+)?\s*(inch|inches|")\b/i, // inches
-    /\d+\s*(?:\.\d+)?\s*cups?\b/i, // cups
-    /\d+\s*(?:\.\d+)?\s*(?:fl\.?\s*oz|fl\s+oz)/i, // fl oz
-    /\d+\s*(?:\.\d+)?\s*(?:tbsp|tablespoons?)\b/i, // tablespoon
-    /\d+\s*(?:\.\d+)?\s*(?:tsp|teaspoons?)\b/i, // teaspoon
+    /\d+\s*(?:\/\d+)?\s*-?\s*(inch|inches|")\b/i, // inches (with optional dash)
+    /\d+\s*(?:\/\d+)?\s*quarts?\b/i, // quarts
+    /\d+\s*(?:\/\d+)?\s*cups?\b/i, // cups
+    /\d+\s*(?:\/\d+)?\s*(?:fl\.?\s*oz|fl\s+oz)/i, // fl oz
+    /\d+\s*(?:\/\d+)?\s*(?:tbsp|tablespoons?)\b/i, // tablespoon
+    /\d+\s*(?:\/\d+)?\s*(?:tsp|teaspoons?)\b/i, // teaspoon
   ];
 
   // Check ingredient eenheid field
@@ -106,6 +111,13 @@ export function converteerEenheid(
   }
 
   // Volume conversions
+  if (lower === "quart" || lower === "quarts") {
+    return {
+      hoeveelheid: hoeveelheid ? Math.round(hoeveelheid * 946.353) : null,
+      eenheid: "ml",
+    };
+  }
+
   if (lower === "cup" || lower === "cups") {
     return {
       hoeveelheid: hoeveelheid ? Math.round(hoeveelheid * 236.59) : null,
@@ -189,9 +201,9 @@ function converteerGewicht(tekst: string): string {
 
 // Convert length in text (inch → cm)
 function converteerLengte(tekst: string): string {
-  // inch/inches/" → cm (supports fractions like "1/2 inch")
+  // inch/inches/" → cm (supports fractions like "1/2 inch", with optional dash like "4-inch")
   return tekst.replace(
-    /(\d+(?:\/\d+)?)\s*(inch|inches|")\b/gi,
+    /(\d+(?:\/\d+)?)\s*-?\s*(inch|inches|")\b/gi,
     (match, amount) => {
       const inch = parseGetal(amount);
       const cm = Math.round(inch * 2.54 * 10) / 10;
@@ -200,8 +212,15 @@ function converteerLengte(tekst: string): string {
   );
 }
 
-// Convert volume in text (cup → ml, fl oz → ml)
+// Convert volume in text (cup → ml, fl oz → ml, quart → ml)
 function converteerInhoud(tekst: string): string {
+  // quart/quarts → ml (supports fractions like "1/2 quart")
+  tekst = tekst.replace(/(\d+(?:\/\d+)?)\s*quarts?\b/gi, (match, amount) => {
+    const quarts = parseGetal(amount);
+    const ml = Math.round(quarts * 946.353);
+    return `${ml}ml`;
+  });
+
   // cup/cups → ml (supports fractions like "1/4 cup")
   tekst = tekst.replace(/(\d+(?:\/\d+)?)\s*cups?\b/gi, (match, amount) => {
     const cups = parseGetal(amount);
