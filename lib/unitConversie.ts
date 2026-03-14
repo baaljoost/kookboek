@@ -203,7 +203,7 @@ function converteerGewicht(tekst: string): string {
 function converteerLengte(tekst: string): string {
   // Handle ranges like "3- to 4-inch" → "8- to 10cm"
   tekst = tekst.replace(
-    /(\d+(?:\/\d+)?)\s*-\s*to\s+(\d+(?:\/\d+)?)\s*(?:inch|inches|")/gi,
+    /(\d+(?:\/\d+)?)\s*-\s*to\s+(\d+(?:\/\d+)?)\s*-?\s*(?:inch|inches|")/gi,
     (match, startAmount, endAmount) => {
       const startInch = parseGetal(startAmount);
       const endInch = parseGetal(endAmount);
