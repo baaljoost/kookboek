@@ -165,7 +165,7 @@ function converteerTemperatuur(tekst: string): string {
   // Match patterns like "350°F", "350 F", "350F", "350 degrees F", "350 degrees Fahrenheit"
   // Supports fractions like "1/2 degrees F"
   return tekst.replace(
-    /(\d+(?:\/\d+)?)\s*(?:degrees?\s+)?(?:°\s*)?(?:F(?:ahrenheit)?)\b/gi,
+    /(\d+(?:\.\d+)?|\d+\/\d+(?:\.\d+)?)\s*(?:degrees?\s+)?(?:°\s*)?(?:F(?:ahrenheit)?)\b/gi,
     (match, fahrenheit) => {
       const f = parseGetal(fahrenheit);
       const c = Math.round(((f - 32) * 5) / 9);
@@ -178,7 +178,7 @@ function converteerTemperatuur(tekst: string): string {
 function converteerGewicht(tekst: string): string {
   // oz/ounce/ounces → g (supports fractions like "1/4 oz")
   tekst = tekst.replace(
-    /(\d+(?:\/\d+)?)\s*(oz|ounce|ounces)\b/gi,
+    /(\d+(?:\.\d+)?|\d+\/\d+(?:\.\d+)?)\s*(oz|ounce|ounces)\b/gi,
     (match, amount) => {
       const oz = parseGetal(amount);
       const g = Math.round(oz * 28.35);
@@ -188,7 +188,7 @@ function converteerGewicht(tekst: string): string {
 
   // lb/lbs/pounds/pound → g (supports fractions)
   tekst = tekst.replace(
-    /(\d+(?:\/\d+)?)\s*(lb|lbs|pounds?)\b/gi,
+    /(\d+(?:\.\d+)?|\d+\/\d+(?:\.\d+)?)\s*(lb|lbs|pounds?)\b/gi,
     (match, amount) => {
       const lb = parseGetal(amount);
       const g = Math.round(lb * 453.59);
@@ -203,7 +203,7 @@ function converteerGewicht(tekst: string): string {
 function converteerLengte(tekst: string): string {
   // Handle ranges like "3- to 4-inch" → "8- to 10cm"
   tekst = tekst.replace(
-    /(\d+(?:\/\d+)?)\s*-\s*to\s+(\d+(?:\/\d+)?)\s*-?\s*(?:inch|inches|")/gi,
+    /(\d+(?:\.\d+)?|\d+\/\d+(?:\.\d+)?)\s*-\s*to\s+(\d+(?:\.\d+)?|\d+\/\d+(?:\.\d+)?)\s*-?\s*(?:inch|inches|")/gi,
     (match, startAmount, endAmount) => {
       const startInch = parseGetal(startAmount);
       const endInch = parseGetal(endAmount);
@@ -215,7 +215,7 @@ function converteerLengte(tekst: string): string {
 
   // Handle single values like "1/2 inch", "4-inch"
   tekst = tekst.replace(
-    /(\d+(?:\/\d+)?)\s*-?\s*(inch|inches|")\b/gi,
+    /(\d+(?:\.\d+)?|\d+\/\d+(?:\.\d+)?)\s*-?\s*(inch|inches|")\b/gi,
     (match, amount) => {
       const inch = parseGetal(amount);
       const cm = Math.round(inch * 2.54 * 10) / 10;
@@ -229,14 +229,14 @@ function converteerLengte(tekst: string): string {
 // Convert volume in text (cup → ml, fl oz → ml, quart → ml)
 function converteerInhoud(tekst: string): string {
   // quart/quarts → ml (supports fractions like "1/2 quart")
-  tekst = tekst.replace(/(\d+(?:\/\d+)?)\s*quarts?\b/gi, (match, amount) => {
+  tekst = tekst.replace(/(\d+(?:\.\d+)?|\d+\/\d+(?:\.\d+)?)\s*quarts?\b/gi, (match, amount) => {
     const quarts = parseGetal(amount);
     const ml = Math.round(quarts * 946.353);
     return `${ml}ml`;
   });
 
   // cup/cups → ml (supports fractions like "1/4 cup")
-  tekst = tekst.replace(/(\d+(?:\/\d+)?)\s*cups?\b/gi, (match, amount) => {
+  tekst = tekst.replace(/(\d+(?:\.\d+)?|\d+\/\d+(?:\.\d+)?)\s*cups?\b/gi, (match, amount) => {
     const cups = parseGetal(amount);
     const ml = Math.round(cups * 236.59);
     return `${ml}ml`;
@@ -244,7 +244,7 @@ function converteerInhoud(tekst: string): string {
 
   // fl oz → ml (supports fractions)
   tekst = tekst.replace(
-    /(\d+(?:\/\d+)?)\s*fl\.?\s*oz\b/gi,
+    /(\d+(?:\.\d+)?|\d+\/\d+(?:\.\d+)?)\s*fl\.?\s*oz\b/gi,
     (match, amount) => {
       const floz = parseGetal(amount);
       const ml = Math.round(floz * 29.57);
