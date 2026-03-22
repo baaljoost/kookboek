@@ -76,7 +76,14 @@ export default function VoorstelFormulier() {
     let jsonLdStrings: string[] | null = null;
     let pageHtml: string | null = null;
     try {
-      const pageRes = await fetch(importUrl.trim());
+      const pageRes = await fetch(importUrl.trim(), {
+        headers: {
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "nl-NL,nl;q=0.9,en-US;q=0.8",
+          "Cache-Control": "no-cache",
+        },
+        signal: AbortSignal.timeout(10000),
+      });
       if (pageRes.ok) {
         const rawHtml = await pageRes.text();
         pageHtml = rawHtml.slice(0, 300000);

@@ -619,19 +619,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Controleer of HTML leeg is (bot-protection response)
+    if (html && html.length < 2000) {
+      console.warn(`[importeer] Short HTML (${html.length} chars) voor ${url}`);
+      // Probeer toch JSON-LD te vinden, maar verwacht niet veel
+    }
+
     recept = vindJsonLd(html);
+    if (recept) {
+      console.log(`[importeer] JSON-LD gevonden voor ${url}`);
+    }
 
     if (!recept) {
       const fallback = scrapHtmlFallback(html, url);
-      if (fallback) recept = fallback as JsonLdRecipe;
-    }
-
-    // Controleer voor lege responses (ah.nl stuurt soms 200 OK maar lege content)
-    // Dit kan resulteren uit rate limiting of subtiele bot-detectie
-    if (!recept && html && html.length < 2000) {
-      // Te kort HTML → waarschijnlijk rate-limited of bot-beschermd
-      // Log dit zodat we het later kunnen debuggen
-      console.warn(`[importeer] Short/empty HTML (${html.length} chars) voor ${url}`);
+      if (fallback) {
+        recept = fallback as JsonLdRecipe;
+        console.log(`[importeer] HTML fallback scraper werkte voor ${url}`);
+      }
     }
 
     // Laatste redmiddel: AI-extractie als recept ontbreekt of instructies leeg zijn
