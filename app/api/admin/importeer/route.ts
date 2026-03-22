@@ -422,7 +422,7 @@ function vindJsonLdVanString(str: string): JsonLdRecipe | null {
   return null;
 }
 
-// Detecteer bot-challenge pagina's (Cloudflare, Akamai, etc.)
+// Detecteer bot-challenge pagina's (Cloudflare, Akamai, etc.) + ah.nl specifieke markers
 function detecteerBotBlokkade(html: string): boolean {
   if (!html || html.length < 500) return false;
   return (
@@ -432,6 +432,9 @@ function detecteerBotBlokkade(html: string): boolean {
     || /enable javascript and cookies to continue/i.test(html)
     || /this page is protected by.*captcha/i.test(html)
     || /robot.*detected|detected.*robot/i.test(html)
+    // ah.nl specifieke markers
+    || /window\.location.*security|security\.akamai|guard\.akamai/i.test(html)
+    || /403|429|invalid request/i.test(html.slice(0, 500)) // check eerste 500 chars voor HTTP-achtige markers
   );
 }
 
@@ -569,6 +572,7 @@ export async function POST(request: NextRequest) {
           "Accept-Encoding": "gzip, deflate, br",
           "Cache-Control": "no-cache",
           "Connection": "keep-alive",
+          "Referer": new URL(url).origin + "/", // voeg referer toe (veel sites blocken zonder deze)
           "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
           "Sec-Ch-Ua-Mobile": "?0",
           "Sec-Ch-Ua-Platform": '"macOS"',
@@ -606,6 +610,14 @@ export async function POST(request: NextRequest) {
     if (!recept) {
       const fallback = scrapHtmlFallback(html, url);
       if (fallback) recept = fallback as JsonLdRecipe;
+    }
+
+    // Controleer voor lege responses (ah.nl stuurt soms 200 OK maar lege content)
+    // Dit kan resulteren uit rate limiting of subtiele bot-detectie
+    if (!recept && html && html.length < 2000) {
+      // Te kort HTML → waarschijnlijk rate-limited of bot-beschermd
+      // Log dit zodat we het later kunnen debuggen
+      console.warn(`[importeer] Short/empty HTML (${html.length} chars) voor ${url}`);
     }
 
     // Laatste redmiddel: AI-extractie als recept ontbreekt of instructies leeg zijn
