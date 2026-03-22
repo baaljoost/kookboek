@@ -570,7 +570,8 @@ export async function POST(request: NextRequest) {
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
           "Accept-Language": "nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7",
           "Accept-Encoding": "gzip, deflate, br",
-          "Cache-Control": "no-cache",
+          "Cache-Control": "no-cache, no-store",
+          "Pragma": "no-cache",
           "Connection": "keep-alive",
           "Referer": new URL(url).origin + "/", // voeg referer toe (veel sites blocken zonder deze)
           "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
@@ -584,7 +585,20 @@ export async function POST(request: NextRequest) {
         },
         signal: AbortSignal.timeout(15000),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errorStatus = res.status;
+        // 429 = rate limited, 403/401 = bot-detected
+        if (errorStatus === 429 || errorStatus === 403 || errorStatus === 401) {
+          return NextResponse.json(
+            {
+              error: "Deze website blokkeert automatisch ophalen (rate limiting/bot-bescherming). Probeer later opnieuw of gebruik de browserextensie.",
+              partialData: {} // leeg voor nu, maar user kan later proberen
+            },
+            { status: 422 }
+          );
+        }
+        throw new Error(`HTTP ${errorStatus}`);
+      }
       html = await res.text();
     } catch (err) {
       return NextResponse.json(
