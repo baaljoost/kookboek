@@ -601,6 +601,10 @@ export async function POST(request: NextRequest) {
       }
       html = await res.text();
       console.log(`[importeer] Server fetch succeeded for ${url}, HTML length: ${html.length}`);
+      // Debug: toon eerste 500 chars van HTML
+      if (html.length < 5000) {
+        console.log(`[importeer] HTML preview: ${html.slice(0, 500)}`);
+      }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       console.error(`[importeer] Server fetch failed for ${url}: ${errMsg}`);
