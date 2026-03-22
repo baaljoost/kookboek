@@ -600,15 +600,19 @@ export async function POST(request: NextRequest) {
         throw new Error(`HTTP ${errorStatus}`);
       }
       html = await res.text();
+      console.log(`[importeer] Server fetch succeeded for ${url}, HTML length: ${html.length}`);
     } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error(`[importeer] Server fetch failed for ${url}: ${errMsg}`);
       return NextResponse.json(
-        { error: `Kon pagina niet ophalen: ${err instanceof Error ? err.message : String(err)}` },
+        { error: `Kon pagina niet ophalen: ${errMsg}` },
         { status: 422 }
       );
     }
 
     // Detecteer bot-challenge pagina's (Cloudflare, Akamai, etc.)
     if (detecteerBotBlokkade(html)) {
+      console.warn(`[importeer] Bot-blokkade gedetecteerd voor ${url}`);
       return NextResponse.json(
         {
           error:
@@ -627,14 +631,19 @@ export async function POST(request: NextRequest) {
 
     recept = vindJsonLd(html);
     if (recept) {
-      console.log(`[importeer] JSON-LD gevonden voor ${url}`);
+      console.log(`[importeer] JSON-LD gevonden voor ${url}: ${recept.name}`);
+    } else {
+      console.warn(`[importeer] JSON-LD NIET gevonden voor ${url}`);
     }
 
     if (!recept) {
+      console.log(`[importeer] Probeer HTML fallback scraper...`);
       const fallback = scrapHtmlFallback(html, url);
       if (fallback) {
         recept = fallback as JsonLdRecipe;
-        console.log(`[importeer] HTML fallback scraper werkte voor ${url}`);
+        console.log(`[importeer] HTML fallback scraper werkte voor ${url}: ${fallback.name}`);
+      } else {
+        console.warn(`[importeer] HTML fallback scraper faalde voor ${url}`);
       }
     }
 
