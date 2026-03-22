@@ -422,7 +422,7 @@ function vindJsonLdVanString(str: string): JsonLdRecipe | null {
   return null;
 }
 
-// Detecteer bot-challenge pagina's (Cloudflare, Akamai, etc.) + ah.nl specifieke markers
+// Detecteer bot-challenge pagina's (Cloudflare, Akamai, etc.)
 function detecteerBotBlokkade(html: string): boolean {
   if (!html || html.length < 500) return false;
   return (
@@ -432,9 +432,10 @@ function detecteerBotBlokkade(html: string): boolean {
     || /enable javascript and cookies to continue/i.test(html)
     || /this page is protected by.*captcha/i.test(html)
     || /robot.*detected|detected.*robot/i.test(html)
-    // ah.nl specifieke markers
+    // Akamai Bot Manager markers
+    || /sec-if-cpt-container|behavioral-content|sec-bc-tile/i.test(html)
     || /window\.location.*security|security\.akamai|guard\.akamai/i.test(html)
-    || /403|429|invalid request/i.test(html.slice(0, 500)) // check eerste 500 chars voor HTTP-achtige markers
+    || /403|429|invalid request/i.test(html.slice(0, 500))
   );
 }
 
