@@ -14,8 +14,34 @@ import FotoBewerken from "@/components/FotoBewerken";
 import VerwijderReceptKnop from "@/components/VerwijderReceptKnop";
 import OpmerkingFormulier from "@/components/OpmerkingFormulier";
 import VerwijderOpmerkingKnop from "@/components/VerwijderOpmerkingKnop";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const recept = await prisma.recept.findUnique({
+    where: { slug },
+    select: { titel: true, fotos: { select: { url: true }, take: 1 } },
+  });
+
+  if (!recept) return {};
+
+  return {
+    title: recept.titel,
+    description: `Bekijk dit recept in Het Kookboek van Joost`,
+    openGraph: {
+      title: recept.titel,
+      description: `Bekijk dit recept in Het Kookboek van Joost`,
+      type: "website",
+      images: recept.fotos.length > 0 ? [{ url: recept.fotos[0].url }] : [],
+    },
+  };
+}
 
 export async function generateStaticParams() {
   const recepten = await prisma.recept.findMany({ select: { slug: true } });
