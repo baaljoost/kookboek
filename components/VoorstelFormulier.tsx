@@ -73,30 +73,35 @@ export default function VoorstelFormulier() {
     setImportFoutNaam("");
 
     // Probeer de pagina vanuit de browser te laden (omzeilt bot-detectie, werkt voor CSR-sites)
+    // Skip browser-side fetch voor sites die CORS blokkeren (ah.nl, etc)
     let jsonLdStrings: string[] | null = null;
     let pageHtml: string | null = null;
-    try {
-      const pageRes = await fetch(importUrl.trim(), {
-        headers: {
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "nl-NL,nl;q=0.9,en-US;q=0.8",
-          "Cache-Control": "no-cache",
-        },
-        signal: AbortSignal.timeout(10000),
-      });
-      if (pageRes.ok) {
-        const rawHtml = await pageRes.text();
-        pageHtml = rawHtml.slice(0, 300000);
-        const scriptRegex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
-        const scripts: string[] = [];
-        let m;
-        while ((m = scriptRegex.exec(rawHtml)) !== null) {
-          if (m[1]) scripts.push(m[1]);
+    const skipBrowserFetch = /ah\.nl|allerhande\.nl/i.test(importUrl.trim());
+
+    if (!skipBrowserFetch) {
+      try {
+        const pageRes = await fetch(importUrl.trim(), {
+          headers: {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "nl-NL,nl;q=0.9,en-US;q=0.8",
+            "Cache-Control": "no-cache",
+          },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (pageRes.ok) {
+          const rawHtml = await pageRes.text();
+          pageHtml = rawHtml.slice(0, 300000);
+          const scriptRegex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+          const scripts: string[] = [];
+          let m;
+          while ((m = scriptRegex.exec(rawHtml)) !== null) {
+            if (m[1]) scripts.push(m[1]);
+          }
+          jsonLdStrings = scripts;
         }
-        jsonLdStrings = scripts;
+      } catch {
+        // CORS of netwerkfout — server doet de fetch
       }
-    } catch {
-      // CORS of netwerkfout — server doet de fetch
     }
 
     const res = await fetch("/api/admin/importeer", {
