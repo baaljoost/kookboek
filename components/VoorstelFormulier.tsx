@@ -122,6 +122,10 @@ export default function VoorstelFormulier() {
       }).catch(() => {});
 
       setImportFout(true);
+      // Toon de specifieke API error in console voor debugging
+      if (data.error) {
+        console.debug(`[VoorstelFormulier] Import error: ${data.error}`);
+      }
       if (data.partialData) {
         const pd = data.partialData;
         setFormData((prev) => ({
