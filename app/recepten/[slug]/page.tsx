@@ -14,6 +14,7 @@ import FotoBewerken from "@/components/FotoBewerken";
 import VerwijderReceptKnop from "@/components/VerwijderReceptKnop";
 import OpmerkingFormulier from "@/components/OpmerkingFormulier";
 import VerwijderOpmerkingKnop from "@/components/VerwijderOpmerkingKnop";
+import SchermWakeLock from "@/components/SchermWakeLock";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -191,6 +192,7 @@ export default async function ReceptPagina({
             {/* Ingrediënten */}
             <div className="md:col-span-1">
               <div className="sticky top-6">
+                <SchermWakeLock />
                 <h2 className="font-serif text-2xl text-neutral-900 mb-4">
                   Ingrediënten
                 </h2>
