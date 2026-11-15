@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import ReceptFormulier from "@/components/admin/ReceptFormulier";
 import { Categorie } from "@prisma/client";
+import { hoeveelheidNaarTekst } from "@/lib/ingredientParser";
 
 export default async function BewerkReceptPage({
   params,
@@ -34,7 +35,7 @@ export default async function BewerkReceptPage({
     tags: recept.tags.map((rt) => rt.tag.naam).join(", "),
     ingredienten: recept.ingredienten.map((ing) => ({
       id: ing.id,
-      hoeveelheid: ing.hoeveelheid?.toString() ?? "",
+      hoeveelheid: hoeveelheidNaarTekst(ing.hoeveelheid),
       eenheid: ing.eenheid ?? "",
       naam: ing.naam,
       notitie: ing.notitie ?? "",

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Categorie } from "@prisma/client";
 import { categorieLabels } from "@/lib/categorieLabels";
+import { parseVoorFormulier } from "@/lib/ingredientParser";
+import EenheidSelect from "@/components/EenheidSelect";
 
 interface Ingredient {
   id?: number;
@@ -11,6 +13,8 @@ interface Ingredient {
   eenheid: string;
   naam: string;
   notitie: string;
+  // Regel zoals die van een import kwam; reist mee naar de server
+  oorspronkelijkeTekst?: string;
 }
 
 interface Stap {
@@ -66,17 +70,6 @@ function parsePortiesClient(w: unknown): number | null {
   const s = Array.isArray(w) ? String(w[0]) : String(w);
   const m = s.match(/\d+/);
   return m ? parseInt(m[0]) : null;
-}
-
-function parseIngredientClient(tekst: string): Ingredient {
-  const notitieMatch = tekst.match(/^(.+?),\s*(.+)$/);
-  const notitie = notitieMatch ? notitieMatch[2].trim() : "";
-  const basis = notitieMatch ? notitieMatch[1].trim() : tekst.trim();
-  const m = basis.match(
-    /^([\d\s\u00BC\u00BD\u00BE\u2150-\u215E\/\.]+)\s*(ml|dl|cl|l|liter|gram|gr|g|kg|el|tl|eetlepel|theelepel|kopje|kop|stuks?|stuk|bosje|teen|teentje|snufje|scheut|handvol|plak|plakje|blik|zakje|pak|ons|oz|cup|cups|tbsp|tsp)?\s*(.*)/i
-  );
-  if (m) return { hoeveelheid: m[1].trim(), eenheid: m[2]?.trim() ?? "", naam: m[3].trim() || basis, notitie };
-  return { hoeveelheid: "", eenheid: "", naam: basis, notitie };
 }
 
 function parseInstructiesClient(instructies: unknown): string[] {
@@ -216,7 +209,7 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
       }
 
       const ingredienten = Array.isArray(recept.recipeIngredient)
-        ? recept.recipeIngredient.map((i) => parseIngredientClient(String(i)))
+        ? recept.recipeIngredient.map((i) => parseVoorFormulier(String(i)))
         : [];
       const stappen = parseInstructiesClient(recept.recipeInstructions);
 
@@ -564,13 +557,11 @@ export default function ReceptFormulier({ receptId, initieleWaarden }: Props) {
                 onChange={(e) => updateIngredient(i, "hoeveelheid", e.target.value)}
                 className="input w-20 shrink-0"
                 placeholder="200"
+                aria-label="Hoeveelheid"
               />
-              <input
-                type="text"
-                value={ing.eenheid}
-                onChange={(e) => updateIngredient(i, "eenheid", e.target.value)}
-                className="input w-20 shrink-0"
-                placeholder="gram"
+              <EenheidSelect
+                waarde={ing.eenheid}
+                onChange={(waarde) => updateIngredient(i, "eenheid", waarde)}
               />
               <input
                 type="text"

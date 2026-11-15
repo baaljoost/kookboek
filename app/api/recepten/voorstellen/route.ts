@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { maakSlug } from "@/lib/slug";
-
-interface Ingredient {
-  hoeveelheid?: string | number;
-  eenheid?: string;
-  naam: string;
-  notitie?: string;
-}
+import { verwerkIngredienten, type IngredientInvoer } from "@/lib/ingredientInvoer";
+import { laadProductIndex } from "@/lib/productKoppeling";
 
 interface Stap {
   tekst: string;
@@ -22,7 +17,7 @@ interface ReceptData {
   herkomstUrl?: string;
   fotoUrl?: string;
   benodigdheden?: string[];
-  ingredienten?: Ingredient[];
+  ingredienten?: IngredientInvoer[];
   stappen?: Stap[];
 }
 
@@ -51,6 +46,7 @@ export async function POST(request: Request) {
     }
 
     const slug = await uniekeSlug(maakSlug(receptData.titel));
+    const ingredienten = verwerkIngredienten(receptData.ingredienten, await laadProductIndex(prisma));
 
     await prisma.$transaction(async (tx) => {
       const recept = await tx.recept.create({
@@ -73,18 +69,9 @@ export async function POST(request: Request) {
         },
       });
 
-      if (receptData.ingredienten?.length) {
+      if (ingredienten.length) {
         await tx.ingredient.createMany({
-          data: receptData.ingredienten.map((ing, i) => ({
-            receptId: recept.id,
-            volgorde: i,
-            naam: ing.naam,
-            hoeveelheid: ing.hoeveelheid != null
-              ? parseFloat(String(ing.hoeveelheid)) || null
-              : null,
-            eenheid: ing.eenheid ?? null,
-            notitie: ing.notitie ?? null,
-          })),
+          data: ingredienten.map((ing) => ({ ...ing, receptId: recept.id })),
         });
       }
 

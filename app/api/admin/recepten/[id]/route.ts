@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Categorie } from "@prisma/client";
+import { verwerkIngredienten, type IngredientInvoer } from "@/lib/ingredientInvoer";
+import { laadProductIndex } from "@/lib/productKoppeling";
 
 interface ReceptPayload {
   titel: string;
@@ -13,12 +15,7 @@ interface ReceptPayload {
   ingebrachtDoor: string | null;
   tags: string[];
   benodigdheden?: string[];
-  ingredienten: {
-    hoeveelheid: string;
-    eenheid: string;
-    naam: string;
-    notitie: string;
-  }[];
+  ingredienten: IngredientInvoer[];
   stappen: { tekst: string }[];
   fotos: { url: string; altTekst: string }[];
 }
@@ -31,65 +28,62 @@ export async function PUT(
   const receptId = parseInt(id);
   const body: ReceptPayload = await request.json();
 
-  // Tags aanmaken of ophalen
-  const tagIds = await Promise.all(
-    body.tags.map(async (naam) => {
-      const tag = await prisma.tag.upsert({
-        where: { naam },
-        update: {},
-        create: { naam },
+  // Alles in één transactie: mislukt het aanmaken, dan blijven de oude
+  // ingrediënten, stappen en foto's staan.
+  const recept = await prisma.$transaction(
+    async (tx) => {
+      // Bestaande regels ophalen vóór het verwijderen, zodat oorspronkelijke
+      // tekst en productkoppeling bewaard blijven.
+      const bestaande = await tx.ingredient.findMany({ where: { receptId } });
+      const ingredienten = verwerkIngredienten(body.ingredienten, await laadProductIndex(tx), bestaande);
+
+      // Tags aanmaken of ophalen
+      const tagIds: number[] = [];
+      for (const naam of body.tags) {
+        const tag = await tx.tag.upsert({ where: { naam }, update: {}, create: { naam } });
+        tagIds.push(tag.id);
+      }
+
+      // Verwijder gerelateerde data en maak opnieuw aan
+      await tx.ingredient.deleteMany({ where: { receptId } });
+      await tx.stap.deleteMany({ where: { receptId } });
+      await tx.foto.deleteMany({ where: { receptId } });
+      await tx.receptTag.deleteMany({ where: { receptId } });
+
+      return tx.recept.update({
+        where: { id: receptId },
+        data: {
+          titel: body.titel,
+          categorie: body.categorie,
+          porties: body.porties,
+          bereidingstijd: body.bereidingstijd,
+          beoordeling: body.beoordeling,
+          herkomstNaam: body.herkomstNaam || null,
+          herkomstUrl: body.herkomstUrl || null,
+          ingebrachtDoor: body.ingebrachtDoor || null,
+          benodigdheden: body.benodigdheden ?? [],
+          ingredienten: { create: ingredienten },
+          stappen: {
+            create: body.stappen.map((stap, i) => ({
+              volgorde: i,
+              tekst: stap.tekst,
+            })),
+          },
+          fotos: {
+            create: body.fotos.map((foto, i) => ({
+              volgorde: i,
+              url: foto.url,
+              altTekst: foto.altTekst || null,
+            })),
+          },
+          tags: {
+            create: tagIds.map((tagId) => ({ tagId })),
+          },
+        },
       });
-      return tag.id;
-    })
-  );
-
-  // Verwijder gerelateerde data en maak opnieuw aan
-  await prisma.$transaction([
-    prisma.ingredient.deleteMany({ where: { receptId } }),
-    prisma.stap.deleteMany({ where: { receptId } }),
-    prisma.foto.deleteMany({ where: { receptId } }),
-    prisma.receptTag.deleteMany({ where: { receptId } }),
-  ]);
-
-  const recept = await prisma.recept.update({
-    where: { id: receptId },
-    data: {
-      titel: body.titel,
-      categorie: body.categorie,
-      porties: body.porties,
-      bereidingstijd: body.bereidingstijd,
-      beoordeling: body.beoordeling,
-      herkomstNaam: body.herkomstNaam || null,
-      herkomstUrl: body.herkomstUrl || null,
-      ingebrachtDoor: body.ingebrachtDoor || null,
-      benodigdheden: body.benodigdheden ?? [],
-      ingredienten: {
-        create: body.ingredienten.map((ing, i) => ({
-          volgorde: i,
-          hoeveelheid: ing.hoeveelheid ? parseFloat(ing.hoeveelheid) : null,
-          eenheid: ing.eenheid || null,
-          naam: ing.naam,
-          notitie: ing.notitie || null,
-        })),
-      },
-      stappen: {
-        create: body.stappen.map((stap, i) => ({
-          volgorde: i,
-          tekst: stap.tekst,
-        })),
-      },
-      fotos: {
-        create: body.fotos.map((foto, i) => ({
-          volgorde: i,
-          url: foto.url,
-          altTekst: foto.altTekst || null,
-        })),
-      },
-      tags: {
-        create: tagIds.map((tagId) => ({ tagId })),
-      },
     },
-  });
+    { timeout: 20000 }
+  );
 
   return NextResponse.json({ id: recept.id, slug: recept.slug });
 }
