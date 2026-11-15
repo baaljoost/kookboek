@@ -108,6 +108,13 @@ test("bewerken: een aangepaste oude regel wordt genormaliseerd en krijgt een oor
   assert.equal(uit.oorspronkelijkeTekst, "3 tenen knoflook");
 });
 
+test("bewerken: een afgerond getoonde hoeveelheid telt als niet aangeraakt", () => {
+  const oud = { ...bestaand, id: 13, hoeveelheid: 1.333, eenheid: "g", naam: "zout" };
+  // het formulier toonde "1.33"; alleen de notitie is aangepast
+  const uit = verwerkIngredient({ id: 13, hoeveelheid: "1.33", eenheid: "g", naam: "zout", notitie: "fijn" }, index, oud);
+  assert.equal(uit.hoeveelheid, 1.333);
+});
+
 test("opgeslagen NaN telt als leeg en blijft staan zolang de regel niet is aangeraakt", () => {
   const kapot = { ...bestaand, id: 12, hoeveelheid: NaN, eenheid: "tl", naam: "zout" };
   const uit = verwerkIngredient({ id: 12, hoeveelheid: "", eenheid: "tl", naam: "zout" }, index, kapot);

@@ -8,10 +8,11 @@ import ImportMeldingenLijst from "@/components/admin/ImportMeldingenLijst";
 export const dynamic = "force-dynamic";
 
 export default async function ImportMeldingenPage() {
-  const [meldingen, aantalVoorgesteld, aantalImportMeldingen, cookieStore] = await Promise.all([
+  const [meldingen, aantalVoorgesteld, aantalImportMeldingen, aantalTeKoppelen, cookieStore] = await Promise.all([
     prisma.importMelding.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.voorgesteldRecept.count({ where: { status: "WACHT" } }),
     prisma.importMelding.count(),
+    prisma.ingredient.count({ where: { productId: null } }),
     cookies(),
   ]);
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
@@ -37,6 +38,7 @@ export default async function ImportMeldingenPage() {
           isBeheerder={isBeheerder}
           aantalVoorgesteld={aantalVoorgesteld}
           aantalImportMeldingen={aantalImportMeldingen}
+          aantalTeKoppelen={aantalTeKoppelen}
         />
       </header>
 

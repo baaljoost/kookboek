@@ -8,9 +8,10 @@ interface Props {
   isBeheerder: boolean;
   aantalVoorgesteld: number;
   aantalImportMeldingen?: number;
+  aantalTeKoppelen?: number;
 }
 
-export default function AdminNav({ isBeheerder, aantalVoorgesteld, aantalImportMeldingen }: Props) {
+export default function AdminNav({ isBeheerder, aantalVoorgesteld, aantalImportMeldingen, aantalTeKoppelen }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [toggling, setToggling] = useState(false);
@@ -72,6 +73,17 @@ export default function AdminNav({ isBeheerder, aantalVoorgesteld, aantalImportM
               {(aantalImportMeldingen ?? 0) > 0 && (
                 <span className="bg-neutral-400 text-white text-xs rounded-full px-1.5 py-0.5 leading-none font-sans font-normal">
                   {aantalImportMeldingen}
+                </span>
+              )}
+            </span>
+          )}
+          {navLink(
+            "/admin/koppelen",
+            <span className="flex items-center gap-1.5">
+              Koppelen
+              {(aantalTeKoppelen ?? 0) > 0 && (
+                <span className="bg-neutral-400 text-white text-xs rounded-full px-1.5 py-0.5 leading-none font-sans font-normal">
+                  {aantalTeKoppelen}
                 </span>
               )}
             </span>

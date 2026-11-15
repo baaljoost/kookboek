@@ -8,7 +8,7 @@ import AdminNav from "@/components/admin/AdminNav";
 export const dynamic = "force-dynamic";
 
 export default async function AdminVoorstellenPage() {
-  const [voorstellen, aantalImportMeldingen, cookieStore] = await Promise.all([
+  const [voorstellen, aantalImportMeldingen, aantalTeKoppelen, cookieStore] = await Promise.all([
     prisma.recept.findMany({
       where: { goedgekeurd: false },
       include: {
@@ -19,6 +19,7 @@ export default async function AdminVoorstellenPage() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.importMelding.count(),
+    prisma.ingredient.count({ where: { productId: null } }),
     cookies(),
   ]);
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
@@ -35,7 +36,7 @@ export default async function AdminVoorstellenPage() {
             Voorgestelde recepten
           </h1>
         </div>
-        <AdminNav isBeheerder={isBeheerder} aantalVoorgesteld={aantalVoorgesteld} aantalImportMeldingen={aantalImportMeldingen} />
+        <AdminNav isBeheerder={isBeheerder} aantalVoorgesteld={aantalVoorgesteld} aantalImportMeldingen={aantalImportMeldingen} aantalTeKoppelen={aantalTeKoppelen} />
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
