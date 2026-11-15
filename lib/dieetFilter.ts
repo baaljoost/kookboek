@@ -53,12 +53,17 @@ const DIERLIJK_KEYWORDS = [
   "crème fraîche", "creme fraiche", "zure room",
 ];
 
-type IngredientRecord = { naam: string };
+// De naam is de bewoording van het recept; de productnaam is de Nederlandse
+// standaardnaam van een gekoppeld ingrediënt. Door ook daarop te zoeken wordt
+// een Engelse regel die aan "kip" is gekoppeld ook herkend. Ongekoppeld
+// werkt zoals voorheen.
+type IngredientRecord = { naam: string; product?: { naam: string } | null };
 
 function bevatKeyword(ingredienten: IngredientRecord[], keywords: string[]): boolean {
   return ingredienten.some((ing) => {
-    const naam = ing.naam.toLowerCase();
-    return keywords.some((kw) => naam.includes(kw.toLowerCase()));
+    const teksten = [ing.naam.toLowerCase()];
+    if (ing.product?.naam) teksten.push(ing.product.naam.toLowerCase());
+    return keywords.some((kw) => teksten.some((tekst) => tekst.includes(kw.toLowerCase())));
   });
 }
 

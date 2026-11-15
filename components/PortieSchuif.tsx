@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useEenheid } from "./EenheidContext";
 import { converteerIngredientVeld, converteerStapTekst } from "@/lib/unitConversie";
+import { eenheidWeergave } from "@/lib/eenheden";
+import { formatHoeveelheid } from "@/lib/hoeveelheidWeergave";
 
 interface Ingredient {
   id: number;
@@ -16,13 +18,6 @@ interface Props {
   standaardPorties?: number;
   ingredienten: Ingredient[];
   heeftAmerikaanseEenheden?: boolean;
-}
-
-function formatHoeveelheid(waarde: number): string {
-  // Laat nette breuken zien bij schaling
-  if (waarde === Math.round(waarde)) return String(waarde);
-  // Afronden op 1 decimaal
-  return (Math.round(waarde * 10) / 10).toString();
 }
 
 export default function PortieSchuif({
@@ -90,25 +85,22 @@ export default function PortieSchuif({
       {/* Ingrediëntenlijst */}
       <ul className="space-y-2.5">
         {ingredienten.map((ing) => {
+          // Rekenen met het getal; afronden gebeurt pas bij het tonen.
           const geschaaldHoeveelheid =
-            ing.hoeveelheid != null
-              ? formatHoeveelheid(ing.hoeveelheid * factor)
+            ing.hoeveelheid != null && Number.isFinite(ing.hoeveelheid)
+              ? ing.hoeveelheid * factor
               : null;
 
-          // Apply unit conversion if metrisch is enabled
+          // Omrekenen voor regels die nog niet metrisch zijn opgeslagen
           const converted = metrisch && geschaaldHoeveelheid != null
-            ? converteerIngredientVeld(
-                parseFloat(geschaaldHoeveelheid),
-                ing.eenheid,
-                ing.naam
-              )
+            ? converteerIngredientVeld(geschaaldHoeveelheid, ing.eenheid, ing.naam)
             : {
-                hoeveelheid: geschaaldHoeveelheid
-                  ? parseFloat(geschaaldHoeveelheid)
-                  : null,
+                hoeveelheid: geschaaldHoeveelheid,
                 eenheid: ing.eenheid,
                 naam: ing.naam,
               };
+
+          const eenheidTekst = eenheidWeergave(converted.eenheid, converted.hoeveelheid);
 
           const convertedNotitie =
             metrisch && ing.notitie ? converteerStapTekst(ing.notitie) : ing.notitie;
@@ -117,12 +109,8 @@ export default function PortieSchuif({
             <li key={ing.id} className="text-sm text-neutral-700 flex gap-2">
               <span className="font-medium text-neutral-900 whitespace-nowrap">
                 {converted.hoeveelheid != null
-                  ? `${
-                      converted.hoeveelheid === Math.round(converted.hoeveelheid)
-                        ? Math.round(converted.hoeveelheid)
-                        : converted.hoeveelheid
-                    }${converted.eenheid ? ` ${converted.eenheid}` : ""}`
-                  : converted.eenheid ?? ""}
+                  ? `${formatHoeveelheid(converted.hoeveelheid)}${eenheidTekst ? ` ${eenheidTekst}` : ""}`
+                  : eenheidTekst}
               </span>
               <span>
                 {converted.naam}
