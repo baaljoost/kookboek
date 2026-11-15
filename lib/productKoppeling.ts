@@ -39,6 +39,10 @@ const BIJWOORDEN = new Set([
   "optional", "a", "an",
 ]);
 
+export function isBijwoord(woord: string): boolean {
+  return BIJWOORDEN.has(woord);
+}
+
 // Woordgroepen die hetzelfde doen.
 const BIJZINNEN = [
   "in blokjes", "in plakjes", "in ringen", "in stukjes", "in reepjes", "in partjes",
