@@ -1,11 +1,8 @@
 // Parseer ruwe tekst (van OCR of plakken) naar receptvelden
 
-export interface ParsedIngredient {
-  hoeveelheid: string;
-  eenheid: string;
-  naam: string;
-  notitie: string;
-}
+import { parseVoorFormulier, type FormulierIngredient } from "./ingredientParser";
+
+export type ParsedIngredient = FormulierIngredient;
 
 export interface ParsedStap {
   tekst: string;
@@ -17,32 +14,6 @@ export interface ParsedRecept {
   bereidingstijd: string;
   ingredienten: ParsedIngredient[];
   stappen: ParsedStap[];
-}
-
-const EENHEDEN = /^(ml|dl|cl|l|liter|gram|gr|g|kg|kilogram|el|tl|eetlepel|theelepel|kopje|kop|stuks?|stuk|bosje|teen|teentje|snufje|scheut|handvol|plak|plakje|blik|zakje|pak|ons|pond|oz|lb|cup|cups|tbsp|tsp)\.?$/i;
-
-export function parseIngredientRegel(regel: string): ParsedIngredient {
-  const tekst = regel.trim();
-  // Notitie achter komma
-  const notitieMatch = tekst.match(/^(.+?),\s*(.+)$/);
-  const notitie = notitieMatch ? notitieMatch[2].trim() : "";
-  const basis = notitieMatch ? notitieMatch[1].trim() : tekst;
-
-  // Hoeveelheid + eenheid + naam
-  const m = basis.match(
-    /^([\d\s\u00BC\u00BD\u00BE\u2150-\u215E\/\-\.]+)\s*(\S+)?\s+(.*)/
-  );
-  if (m) {
-    const mogelijkeEenheid = m[2] ?? "";
-    if (EENHEDEN.test(mogelijkeEenheid)) {
-      return { hoeveelheid: m[1].trim(), eenheid: mogelijkeEenheid, naam: m[3].trim() || basis, notitie };
-    }
-    // Geen eenheid — getal + naam
-    return { hoeveelheid: m[1].trim(), eenheid: "", naam: (mogelijkeEenheid + " " + (m[3] ?? "")).trim() || basis, notitie };
-  }
-
-  // Geen getal — alles is naam
-  return { hoeveelheid: "", eenheid: "", naam: basis, notitie };
 }
 
 export function parseReceptTekst(tekst: string): ParsedRecept {
@@ -121,7 +92,7 @@ export function parseReceptTekst(tekst: string): ParsedRecept {
         continue;
       }
       const schoon = regel.replace(STAP_NUMMERING, "").trim();
-      if (schoon) ingredienten.push(parseIngredientRegel(schoon));
+      if (schoon) ingredienten.push(parseVoorFormulier(schoon));
     } else if (huidigeSectie === "bereiding") {
       if (STAP_NUMMERING.test(regel)) {
         // Nieuw genummerd stap

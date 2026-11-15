@@ -1,4 +1,7 @@
 import { PrismaClient, Categorie } from "@prisma/client";
+import { parseVoorFormulier, type FormulierIngredient } from "../lib/ingredientParser";
+import { verwerkIngredienten } from "../lib/ingredientInvoer";
+import { laadProductIndex } from "../lib/productKoppeling";
 
 const prisma = new PrismaClient();
 
@@ -121,20 +124,13 @@ const urls = [
 // Uniek maken
 const uniqueUrls = Array.from(new Set(urls));
 
-interface ParsedIngredient {
-  hoeveelheid: string;
-  eenheid: string;
-  naam: string;
-  notitie: string;
-}
-
 interface ImportedRecept {
   titel: string;
   porties: number | null;
   bereidingstijd: number | null;
   herkomstUrl: string;
   herkomstNaam: string;
-  ingredienten: ParsedIngredient[];
+  ingredienten: FormulierIngredient[];
   stappen: { tekst: string }[];
   fotoUrl: string | null;
 }
@@ -179,16 +175,6 @@ async function importeerUrl(url: string): Promise<ImportedRecept | null> {
           bereidingstijd = (parseIso(jsonLd.cookTime ?? "") ?? 0) + (parseIso(jsonLd.prepTime ?? "") ?? 0) || null;
         }
 
-        // Ingrediënten
-        const parseIngredient = (tekst: string): ParsedIngredient => {
-          const notitieMatch = tekst.match(/^(.+?),\s*(.+)$/);
-          const notitie = notitieMatch ? notitieMatch[2].trim() : "";
-          const basis = notitieMatch ? notitieMatch[1].trim() : tekst.trim();
-          const m = basis.match(/^([\d\s\u00BC\u00BD\u00BE\/\.]+)\s*(ml|dl|l|gram|gr|g|kg|el|tl|cup|cups|tbsp|tsp|stuks?|stuk|bosje|snufje|scheut|handvol|ons|pond|oz|lb|bunch)?\s*(.*)/i);
-          if (m) return { hoeveelheid: m[1].trim(), eenheid: m[2]?.trim() ?? "", naam: m[3].trim() || basis, notitie };
-          return { hoeveelheid: "", eenheid: "", naam: basis, notitie };
-        };
-
         // Stappen
         const parseStappen = (inst: unknown): string[] => {
           if (!inst) return [];
@@ -230,7 +216,7 @@ async function importeerUrl(url: string): Promise<ImportedRecept | null> {
           bereidingstijd,
           herkomstUrl: url,
           herkomstNaam: new URL(url).hostname.replace(/^www\./, ""),
-          ingredienten: (jsonLd.recipeIngredient ?? []).map(parseIngredient),
+          ingredienten: (jsonLd.recipeIngredient ?? []).map((tekst: unknown) => parseVoorFormulier(String(tekst ?? ""))),
           stappen: parseStappen(jsonLd.recipeInstructions).map((tekst: string) => ({ tekst })),
           fotoUrl,
         };
@@ -256,6 +242,7 @@ async function main() {
   console.log(`\nBulk import van ${uniqueUrls.length} URLs...\n`);
   let gelukt = 0, mislukt = 0, overgeslagen = 0;
   const mislukteLijst: string[] = [];
+  const productIndex = await laadProductIndex(prisma);
 
   for (const url of uniqueUrls) {
     // Al eerder geïmporteerd?
@@ -290,15 +277,7 @@ async function main() {
         bereidingstijd: data.bereidingstijd,
         herkomstNaam: data.herkomstNaam,
         herkomstUrl: data.herkomstUrl,
-        ingredienten: {
-          create: data.ingredienten.map((ing, i) => ({
-            volgorde: i,
-            hoeveelheid: ing.hoeveelheid ? parseFloat(ing.hoeveelheid) || null : null,
-            eenheid: ing.eenheid || null,
-            naam: ing.naam,
-            notitie: ing.notitie || null,
-          })),
-        },
+        ingredienten: { create: verwerkIngredienten(data.ingredienten, productIndex) },
         stappen: {
           create: data.stappen.map((s, i) => ({ volgorde: i, tekst: s.tekst })),
         },

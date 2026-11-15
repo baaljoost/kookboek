@@ -4,12 +4,15 @@ import { useState } from "react";
 import { Categorie } from "@prisma/client";
 import { categorieLabels } from "@/lib/categorieLabels";
 import VoorstellenPopup from "@/components/VoorstellenPopup";
+import EenheidSelect from "@/components/EenheidSelect";
 
 interface Ingredient {
   hoeveelheid: string;
   eenheid: string;
   naam: string;
   notitie: string;
+  // Regel zoals die van een import kwam; reist mee naar de server
+  oorspronkelijkeTekst?: string;
 }
 
 interface Stap {
@@ -438,12 +441,9 @@ export default function VoorstelFormulier() {
                         className="input w-20 shrink-0"
                         placeholder="200"
                       />
-                      <input
-                        type="text"
-                        value={ing.eenheid}
-                        onChange={(e) => updateIngredient(i, "eenheid", e.target.value)}
-                        className="input w-20 shrink-0"
-                        placeholder="gram"
+                      <EenheidSelect
+                        waarde={ing.eenheid}
+                        onChange={(waarde) => updateIngredient(i, "eenheid", waarde)}
                       />
                       <input
                         type="text"

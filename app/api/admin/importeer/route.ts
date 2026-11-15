@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { parseVoorFormulier } from "@/lib/ingredientParser";
 
 interface JsonLdIngredient {
   recipeIngredient?: string[];
@@ -98,33 +99,8 @@ function parseInstructies(
   return [];
 }
 
-interface ParsedIngredient {
-  hoeveelheid: string;
-  eenheid: string;
-  naam: string;
-  notitie: string;
-}
-
-function parseIngredient(tekst: string): ParsedIngredient {
-  const notitieMatch = tekst.match(/^(.+?),\s*(.+)$/);
-  const notitie = notitieMatch ? notitieMatch[2].trim() : "";
-  const basisTekst = notitieMatch ? notitieMatch[1].trim() : tekst.trim();
-
-  const hoeveelheidMatch = basisTekst.match(
-    /^([\d\s\u00BC\u00BD\u00BE\u2150-\u215E\/\.]+)\s*(ml|dl|cl|l|liter|cc|gram|gr|g|kg|kilogram|el|tl|eetlepel|theelepel|kopje|kop|stuks?|stuk|bosje|teen|teentje|snufje|scheut|handvol|plak|plakje|blik|zakje|pak|can|ons|pond|oz|lb|cup|cups|tbsp|tsp|bunch)?\s*(.*)/i
-  );
-
-  if (hoeveelheidMatch) {
-    return {
-      hoeveelheid: hoeveelheidMatch[1].trim(),
-      eenheid: hoeveelheidMatch[2]?.trim() ?? "",
-      naam: hoeveelheidMatch[3].trim() || basisTekst,
-      notitie,
-    };
-  }
-
-  return { hoeveelheid: "", eenheid: "", naam: basisTekst, notitie };
-}
+// Ingrediëntregels gaan door de gedeelde parser in lib/ingredientParser.ts.
+const parseIngredient = (tekst: unknown) => parseVoorFormulier(String(tekst ?? ""));
 
 function vindJsonLd(html: string): JsonLdRecipe | null {
   const scriptRegex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
@@ -365,7 +341,7 @@ type Categorie =
   | "VLEES" | "VIS_EN_ZEEVRUCHTEN" | "GROENTEN" | "SNACKS"
   | "ONTBIJT" | "DESSERT" | "SAUZEN" | "OVERIG";
 
-function detecteerCategorie(titel: string, ingredienten: ParsedIngredient[]): Categorie {
+function detecteerCategorie(titel: string, ingredienten: { naam: string }[]): Categorie {
   const tekst = [titel, ...ingredienten.map((i) => i.naam)].join(" ").toLowerCase();
 
   const patronen: [Categorie, RegExp][] = [
