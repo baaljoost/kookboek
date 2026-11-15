@@ -33,3 +33,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# omzetting ingrediënten: back-ups, export en controlebestand (bevat alle receptdata)
+/data/omzetting/

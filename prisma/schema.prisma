@@ -42,6 +42,32 @@ model Ingredient {
   notitie     String?
   receptId    Int
   recept      Recept  @relation(fields: [receptId], references: [id], onDelete: Cascade)
+
+  // Regel zoals binnengekomen; wordt daarna nooit overschreven
+  oorspronkelijkeTekst String?
+  productId            Int?
+  product              Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+}
+
+model Product {
+  id           Int      @id @default(autoincrement())
+  naam         String   @unique // Nederlands, enkelvoud, kleine letters
+  afdeling     String   // code uit lib/afdelingen.ts
+  altijdInHuis Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  synoniemen   ProductSynoniem[]
+  ingredienten Ingredient[]
+}
+
+model ProductSynoniem {
+  id        Int     @id @default(autoincrement())
+  tekst     String  @unique // genormaliseerd: meervoud, Engelse naam, spelvariant
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Stap {
