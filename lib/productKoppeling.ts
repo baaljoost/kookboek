@@ -54,6 +54,12 @@ export function koppelSleutel(tekst: string): string {
   return woorden.join(" ");
 }
 
+// Sleutel waarop "nog te koppelen" ingrediënten groepeert. Dezelfde tekst
+// wordt synoniem zodra de groep aan een product is gekoppeld.
+export function koppelGroep(naam: string): string {
+  return koppelSleutel(naam) || normaliseerNaam(naam);
+}
+
 // Genormaliseerde tekst → product. T is een product-id (database) of een
 // productnaam (omzetscript, dat zonder database werkt).
 export type ProductIndex<T> = Map<string, T>;

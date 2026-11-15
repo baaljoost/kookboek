@@ -1,7 +1,7 @@
 // Zet invoer van een formulier, een import of de browserextensie om naar
 // de waarden die in de database komen. Eén plek voor alle schrijfroutes.
 
-import { normaliseerEenheid, parseHoeveelheidTekst } from "./ingredientParser";
+import { hoeveelheidNaarTekst, normaliseerEenheid, parseHoeveelheidTekst } from "./ingredientParser";
 import { normaliseerNaam, zoekProduct, type ProductIndex } from "./productKoppeling";
 
 // Wat een route binnenkrijgt. Hoeveelheid mag tekst ("1/2", "2,5") of een
@@ -69,8 +69,13 @@ export function verwerkIngredient(
   // Bij bewerken: hoeveelheid en eenheid die niet zijn aangeraakt blijven
   // letterlijk staan. Zo verandert opslaan geen regel die nog op de
   // omzetting wacht.
+  // "Niet aangeraakt" = het getal is gelijk, of het veld toont nog precies
+  // wat het formulier voor de opgeslagen waarde liet zien.
   const maatOngewijzigd =
-    !!bestaand && zelfdeGetal(bestaand.hoeveelheid, hoeveelheid) && (bestaand.eenheid ?? "") === eenheidTekst;
+    !!bestaand &&
+    (zelfdeGetal(bestaand.hoeveelheid, hoeveelheid) ||
+      tekst(invoer.hoeveelheid) === hoeveelheidNaarTekst(bestaand.hoeveelheid)) &&
+    (bestaand.eenheid ?? "") === eenheidTekst;
 
   if (bestaand && maatOngewijzigd) {
     hoeveelheid = bestaand.hoeveelheid;

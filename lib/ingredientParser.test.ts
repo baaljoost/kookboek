@@ -151,6 +151,10 @@ test("hoeveelheidNaarTekst en terug verliest niets", () => {
   assert.equal(hoeveelheidNaarTekst(200), "200");
   assert.equal(hoeveelheidNaarTekst(0.15), "0.15");
   assert.equal(hoeveelheidNaarTekst(null), "");
+  // nooit een vorm die als duizendtal wordt teruggelezen
+  assert.equal(hoeveelheidNaarTekst(1.333), "1.33");
+  assert.equal(parseHoeveelheidTekst(hoeveelheidNaarTekst(1.333)), 1.33);
+  assert.equal(hoeveelheidNaarTekst(0.333), "0.333");
   for (const n of [0.5, 1.5, 1 / 3, 2 / 3, 0.25, 0.125, 2.75, 200, 0.15]) {
     const terug = parseHoeveelheidTekst(hoeveelheidNaarTekst(n));
     assert.ok(terug != null && Math.abs(terug - n) < 1e-9, `${n} → ${hoeveelheidNaarTekst(n)} → ${terug}`);

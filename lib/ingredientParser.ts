@@ -173,7 +173,10 @@ export function hoeveelheidNaarTekst(waarde: number | null | undefined): string 
       return heel > 0 ? `${heel} ${teller}/${noemer}` : `${teller}/${noemer}`;
     }
   }
-  return String(Math.round(waarde * 1000) / 1000);
+  const tekst = String(Math.round(waarde * 1000) / 1000);
+  // "1.333" zou bij teruglezen een duizendtal zijn; dan twee decimalen.
+  if (/^[1-9]\d{0,2}\.\d{3}$/.test(tekst)) return String(Math.round(waarde * 100) / 100);
+  return tekst;
 }
 
 // "een halve", "half", "anderhalve", "een kwart"
