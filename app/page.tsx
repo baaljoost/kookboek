@@ -10,6 +10,7 @@ import IngebrachtMenu from "@/components/IngebrachtMenu";
 import CategorieFilter from "@/components/CategorieFilter";
 import DieetMenu from "@/components/DieetMenu";
 import { isVegetarisch, isVegan } from "@/lib/dieetFilter";
+import { normaliseerNaam } from "@/lib/productKoppeling";
 
 interface SearchParams {
   categorie?: string;
@@ -45,6 +46,10 @@ export default async function HomePage({
         }
       : {};
 
+  // Synoniemen staan genormaliseerd in de database (kleine letters, geen
+  // accenten), dus de zoekterm krijgt daarvoor dezelfde behandeling.
+  const qSynoniem = q ? normaliseerNaam(q) : "";
+
   const [alleRecepten, inbrengersRaw] = await Promise.all([
     prisma.recept.findMany({
       where: {
@@ -54,6 +59,21 @@ export default async function HomePage({
             {
               ingredienten: {
                 some: { naam: { contains: q, mode: "insensitive" } },
+              },
+            },
+            // Via het gekoppelde product: "knoflook" vindt ook "garlic"
+            {
+              ingredienten: {
+                some: {
+                  product: {
+                    OR: [
+                      { naam: { contains: q, mode: "insensitive" } },
+                      ...(qSynoniem
+                        ? [{ synoniemen: { some: { tekst: { contains: qSynoniem } } } }]
+                        : []),
+                    ],
+                  },
+                },
               },
             },
             {
@@ -67,7 +87,7 @@ export default async function HomePage({
         fotos: { orderBy: { volgorde: "asc" }, take: 1 },
         _count: { select: { opmerkingen: true } },
         // Ingrediënten meeladen voor dieet-detectie
-        ingredienten: { select: { naam: true } },
+        ingredienten: { select: { naam: true, product: { select: { naam: true } } } },
         // Meest recente opmerking voor 'Recent' sortering
         opmerkingen: { orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } },
       },
