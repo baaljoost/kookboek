@@ -47,6 +47,16 @@ test("uitvoer van de importroute (extensie) komt ongewijzigd door", () => {
   });
 });
 
+test("een importregel reist alleen mee als de naam er nog bij hoort", () => {
+  const vanImport = parseVoorFormulier("1 (14-ounce) can chickpeas, drained");
+  assert.equal(verwerkIngredient(vanImport, index).oorspronkelijkeTekst, "1 (14-ounce) can chickpeas, drained");
+  // hoeveelheid aangepast: de importregel blijft
+  assert.equal(verwerkIngredient({ ...vanImport, hoeveelheid: "2" }, index).oorspronkelijkeTekst, "1 (14-ounce) can chickpeas, drained");
+  // rij overschreven met een ander ingrediënt: de importregel vervalt
+  const overschreven = verwerkIngredient({ ...vanImport, hoeveelheid: "2", eenheid: "", naam: "uien", notitie: "" }, index);
+  assert.equal(overschreven.oorspronkelijkeTekst, "2 uien");
+});
+
 test("oude invoer: getal als hoeveelheid, cups worden omgerekend, onbekende eenheid blijft staan", () => {
   assert.equal(verwerkIngredient({ hoeveelheid: 2, eenheid: "cups", naam: "flour" }, index).hoeveelheid, 473);
   assert.equal(verwerkIngredient({ hoeveelheid: 2, eenheid: "cups", naam: "flour" }, index).eenheid, "ml");

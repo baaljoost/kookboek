@@ -55,6 +55,18 @@ function alsRegel(invoer: IngredientInvoer): string {
   return (notitie ? `${basis}, ${notitie}` : basis).slice(0, MAX_TEKST);
 }
 
+function woorden(waarde: string): string[] {
+  return waarde.toLowerCase().split(/[^\p{L}]+/u).filter((w) => w.length > 1);
+}
+
+// Een meegestuurde importregel telt alleen als de naam er nog in voorkomt.
+// Is de rij na het importeren overschreven met een ander ingrediënt, dan
+// hoort die regel er niet meer bij.
+function hoortBij(regel: string, naam: string): boolean {
+  const inRegel = regel.toLowerCase();
+  return woorden(naam).every((woord) => inRegel.includes(woord));
+}
+
 export function verwerkIngredient(
   invoer: IngredientInvoer,
   index: ProductIndex<number>,
@@ -102,7 +114,8 @@ export function verwerkIngredient(
     // is aangeraakt, blijft leeg: die wacht nog op de omzetting.
     oorspronkelijkeTekst = bestaand.oorspronkelijkeTekst ?? (helemaalOngewijzigd ? null : alsRegel(invoer));
   } else {
-    oorspronkelijkeTekst = tekst(invoer.oorspronkelijkeTekst).slice(0, MAX_TEKST) || alsRegel(invoer);
+    const meegestuurd = tekst(invoer.oorspronkelijkeTekst).slice(0, MAX_TEKST);
+    oorspronkelijkeTekst = meegestuurd && hoortBij(meegestuurd, naam) ? meegestuurd : alsRegel(invoer);
   }
 
   return { hoeveelheid, eenheid, naam, notitie, oorspronkelijkeTekst, productId };
