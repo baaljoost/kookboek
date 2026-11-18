@@ -57,11 +57,34 @@ Verificatie: `tsc --noEmit` schoon, `npm test` 57 van 57, `npm run build` geslaa
 
 ## Nog te doen
 
-**Voor productie**
+**Voor productie: eerst nakijken**
 - De 169 twijfelregels nakijken. Ze zijn nu allemaal op akkoord gezet, ook de drie ingrediënten met naam `0` (parsefout) en de drie met "twee getallen vermenigvuldigd".
 - Recept `zoete-aardappelgratin-chipotle-tamarinde` nakijken: het dieetfilter ging van vegetarisch/vegan "nee" naar "ja".
-- Het controlebestand en de omzetting daarna op productie draaien, met dezelfde volgorde en per stap bevestiging. De testbranch verloopt op 2026-11-24.
-- De 538 regels zonder product koppelen in `/admin/koppelen`, of ontbrekende producten toevoegen aan `data/producten.json`.
+- De testbranch verloopt op 2026-11-24; wat je daar nog wilt nakijken, doe je eerder.
+
+## Volgorde voor productie
+
+**Waarom deze volgorde:** de nieuwe code vraagt het gekoppelde `product` op (bijvoorbeeld `app/page.tsx`), dus code op `main` zonder het schema geeft fouten op de live site, en `npm run build` op Vercel leest bij `generateStaticParams` ook uit de database. Het schema is alleen aanvullend (nieuwe tabellen, twee lege kolommen), dus de oude code blijft er gewoon op werken. De nieuwe code toont oude, nog niet omgezette waarden ongewijzigd. Daarom: schema vóór code, code vóór omzetting.
+
+Elke databasestap vraagt bevestiging per keer en meldt `Database: <host>`. Op productie moet dat `ep-odd-mouse-aipwv85v` zijn.
+
+1. **Wachtwoord vervangen** (zie Beveiliging hierboven), `POSTGRES_*` in Vercel bijwerken en opnieuw deployen. Dit deployt nog de oude code van `main`, dus het schema speelt geen rol. Doe dit eerst, zodat alles hierna met het nieuwe wachtwoord gebeurt.
+2. **Verse back-upbranch van productie** in Neon (bijvoorbeeld `backup-<datum>`). De bestaande `backup-2026-11-16` is ouder dan eventuele nieuwe opmerkingen en voorstellen.
+3. **Lokaal naar productie wijzen:** de drie `POSTGRES_`-regels in `.env` en `.env.local` vervangen door de productiewaarden (met het nieuwe wachtwoord). Controleren dat alle zes de regels host `ep-odd-mouse-aipwv85v` hebben.
+4. **Schema:** `prisma migrate diff` en laten zien (moet gelijk zijn aan de testbranch: alleen aanvullingen), dan `prisma db push`.
+5. **Producten laden:** `producten-laden.ts` als proefrun, dan `--uitvoeren --host=<productiehost>`. Verwacht 300 producten en 883 synoniemen.
+6. **Preview controleren:** de Vercel-preview van branch `ingredienten-standaardiseren` bouwt nu wel, omdat het schema er staat. Open de preview en kijk of receptpagina's, zoeken en `/admin/koppelen` werken. Dit is nog zonder omgezette ingrediënten.
+7. **Code naar `main`:** pull request mergen. Vercel deployt automatisch. Controleer de live site.
+8. **Omzetting:** `backup.ts`, `exporteer.ts` en `toepassen.ts` als proefrun met het beoordeelde `controle.csv`. De proefrun toont hoeveel regels zijn overgeslagen omdat een recept sinds de export is bewerkt; zijn dat er veel, genereer dan `controlebestand.ts` opnieuw. Daarna `--uitvoeren`, en een tweede proefrun moet 0 wijzigingen tonen.
+9. **Koppelen:** de regels zonder product afwerken in `/admin/koppelen`.
+10. **Opruimen:** `.env` en `.env.local` zetten op wat je wilt houden, `data/omzetting/` bewaren of verwijderen, en `.claude/settings.local.json` uit git halen (zie Beveiliging).
+
+**Terugdraaien**
+- Omzetting: `toepassen.ts --terugdraaien=<bestand>`; het terugdraaibestand wordt vóór het schrijven gemaakt.
+- Code: de merge terugdraaien op `main`; het schema kan blijven staan.
+- Alles: de back-upbranch uit stap 2.
+
+**Niet doen:** de pull request mergen of naar `main` pushen vóór stap 4 en 5 klaar zijn.
 
 **Beveiliging, los van de omzetting**
 `.claude/settings.local.json` staat in git en op `origin/main`. De GitHub-repo is **publiek**. Het bestand bevat een toegestaan commando met de **productie-URL inclusief wachtwoord**.
