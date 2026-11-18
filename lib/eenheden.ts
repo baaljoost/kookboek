@@ -104,12 +104,6 @@ export const EENHEDEN: Eenheid[] = [
     nl: ["blik", "blikken", "blikje", "blikjes"],
     en: ["can", "cans", "tin", "tins"],
   },
-];
-
-// Eenheden die pas op de lijst komen als ze minstens drie keer in de data
-// voorkomen (zie plan). Tot die tijd blijft het woord in de naam staan.
-// Activeren = het blok verplaatsen naar EENHEDEN hierboven.
-export const KANDIDAAT_EENHEDEN: Eenheid[] = [
   {
     code: "takje",
     enkelvoud: "takje",
@@ -127,36 +121,12 @@ export const KANDIDAAT_EENHEDEN: Eenheid[] = [
     en: ["slice", "slices"],
   },
   {
-    code: "zakje",
-    enkelvoud: "zakje",
-    meervoud: "zakjes",
-    soort: "telwoord",
-    nl: ["zakje", "zakjes", "zak", "zakken"],
-    en: ["sachet", "sachets", "bag", "bags"],
-  },
-  {
-    code: "pak",
-    enkelvoud: "pak",
-    meervoud: "pakken",
-    soort: "telwoord",
-    nl: ["pak", "pakken", "pakje", "pakjes"],
-    en: ["package", "packages", "pack", "packs", "pkg"],
-  },
-  {
     code: "pot",
     enkelvoud: "pot",
     meervoud: "potten",
     soort: "telwoord",
     nl: ["pot", "potten", "potje", "potjes"],
     en: ["jar", "jars"],
-  },
-  {
-    code: "scheut",
-    enkelvoud: "scheut",
-    meervoud: "scheuten",
-    soort: "telwoord",
-    nl: ["scheut", "scheuten", "scheutje", "scheutjes"],
-    en: ["splash", "dash"],
   },
   {
     code: "handvol",
@@ -173,6 +143,36 @@ export const KANDIDAAT_EENHEDEN: Eenheid[] = [
     soort: "maat",
     nl: ["cm", "centimeter"],
     en: ["centimeters", "centimetre", "centimetres"],
+  },
+];
+
+// Eenheden die pas op de lijst komen als ze minstens drie keer in de data
+// voorkomen (zie plan). Tot die tijd blijft het woord in de naam staan.
+// Activeren = het blok verplaatsen naar EENHEDEN hierboven.
+export const KANDIDAAT_EENHEDEN: Eenheid[] = [
+  {
+    code: "zakje",
+    enkelvoud: "zakje",
+    meervoud: "zakjes",
+    soort: "telwoord",
+    nl: ["zakje", "zakjes", "zak", "zakken"],
+    en: ["sachet", "sachets", "bag", "bags"],
+  },
+  {
+    code: "pak",
+    enkelvoud: "pak",
+    meervoud: "pakken",
+    soort: "telwoord",
+    nl: ["pak", "pakken", "pakje", "pakjes"],
+    en: ["package", "packages", "pack", "packs", "pkg"],
+  },
+  {
+    code: "scheut",
+    enkelvoud: "scheut",
+    meervoud: "scheuten",
+    soort: "telwoord",
+    nl: ["scheut", "scheuten", "scheutje", "scheutjes"],
+    en: ["splash", "dash"],
   },
 ];
 
