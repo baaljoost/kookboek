@@ -86,7 +86,7 @@ test("herstel: decimale komma en bereik", () => {
 test("herstel: eenheid die in de naam was blijven staan", () => {
   assert.deepEqual(herstel(1, null, "teaspoon salt").voorstel, { hoeveelheid: 1, eenheid: "tl", naam: "salt", notitie: null });
   assert.deepEqual(herstel(8, null, "ounces pasta").voorstel, { hoeveelheid: 227, eenheid: "g", naam: "pasta", notitie: null });
-  assert.deepEqual(herstel(2, null, "takjes tijm").voorstel, { hoeveelheid: 2, eenheid: null, naam: "takjes tijm", notitie: null });
+  assert.deepEqual(herstel(2, null, "takjes tijm").voorstel, { hoeveelheid: 2, eenheid: "takje", naam: "tijm", notitie: null });
 });
 
 test("herstel: NaN, haakjes en getallen met drie decimalen", () => {

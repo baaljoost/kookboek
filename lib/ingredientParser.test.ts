@@ -118,9 +118,17 @@ test("zonder naam is het eenheidswoord zelf het ingrediënt", () => {
 });
 
 test("woorden die nog niet op de lijst staan blijven in de naam", () => {
-  controleer("2 takjes tijm", { hoeveelheid: 2, eenheid: null, naam: "takjes tijm" });
+  controleer("1 zakje vanillesuiker", { hoeveelheid: 1, eenheid: null, naam: "zakje vanillesuiker" });
   controleer("1 scheut olijfolie", { hoeveelheid: 1, eenheid: null, naam: "scheut olijfolie" });
   controleer("el olijfolie", { hoeveelheid: null, eenheid: null, naam: "el olijfolie" });
+});
+
+test("takje, plak, pot, handvol en cm staan op de lijst", () => {
+  controleer("2 takjes tijm", { hoeveelheid: 2, eenheid: "takje", naam: "tijm" });
+  controleer("4 plakken kaas", { hoeveelheid: 4, eenheid: "plak", naam: "kaas" });
+  controleer("1 pot tomatenpuree", { hoeveelheid: 1, eenheid: "pot", naam: "tomatenpuree" });
+  controleer("1 handvol rucola", { hoeveelheid: 1, eenheid: "handvol", naam: "rucola" });
+  controleer("2 cm gember", { hoeveelheid: 2, eenheid: "cm", naam: "gember" });
 });
 
 test("oorspronkelijke tekst blijft bewaard", () => {
