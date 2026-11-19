@@ -1,26 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkPassword, SESSION_COOKIE, SESSION_VALUE } from "@/lib/auth";
+import { checkPassword, sessieCookie } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
-  const { wachtwoord } = await request.json();
+  let wachtwoord: unknown;
+  try {
+    ({ wachtwoord } = await request.json());
+  } catch {
+    return NextResponse.json({ error: "Ongeldige aanvraag" }, { status: 400 });
+  }
 
   let correct = false;
+  let cookie;
   try {
     correct = checkPassword(wachtwoord);
+    if (correct) cookie = await sessieCookie();
   } catch {
+    // ADMIN_PASSWORD of SESSION_SECRET ontbreekt: nooit inloggen
     return NextResponse.json({ error: "Serverfout" }, { status: 500 });
   }
 
-  if (!correct) {
+  if (!correct || !cookie) {
     return NextResponse.json({ error: "Onjuist wachtwoord" }, { status: 401 });
   }
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(SESSION_COOKIE, SESSION_VALUE, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    // Geen maxAge → sessie-cookie: verdwijnt als browser sluit
-  });
+  response.cookies.set(cookie.naam, cookie.waarde, cookie.opties);
   return response;
 }
