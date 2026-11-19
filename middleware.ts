@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { controleerSessieToken } from "@/lib/sessie";
 
 const SESSION_COOKIE = "kookboek_admin";
-const SESSION_VALUE = "authenticated";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
@@ -14,12 +14,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const authOk = request.cookies.get(SESSION_COOKIE)?.value === SESSION_VALUE;
-
   // Foto-endpoints zijn vrij toegankelijk (persoonlijk kookboek, geen strenge beveiliging nodig)
   if (/^\/api\/admin\/recepten\/\d+\/fotos/.test(pathname)) {
     return NextResponse.next();
   }
+
+  // Getekende sessie; de oude vaste waarde "authenticated" telt niet meer.
+  const authOk = await controleerSessieToken(request.cookies.get(SESSION_COOKIE)?.value);
 
   if (!authOk) {
     // API-routes krijgen een 401 JSON (geen redirect, anders stuurt een 307
@@ -34,5 +35,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/week/:path*"],
 };
