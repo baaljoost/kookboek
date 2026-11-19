@@ -163,7 +163,7 @@ De bezoeker kan het aantal porties aanpassen via de receptpagina. Alle hoeveelhe
 - Gebruikersaccounts / multi-user
 - Reacties of beoordelingen
 - Recepten delen via social media
-- Maaltijdplanner of boodschappenlijst
+- Maaltijdplanner met dagen en automatische voorstellen (een weekmenu zonder dagen met boodschappenlijst bestaat sinds nov 2026, zie weekmenu-en-boodschappenlijst.md)
 - Introductieteksten of blogberichten bij recepten
 
 ---
