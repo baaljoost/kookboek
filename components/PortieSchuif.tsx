@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useEenheid } from "./EenheidContext";
+import PortieKiezer from "./PortieKiezer";
 import { converteerIngredientVeld, converteerStapTekst } from "@/lib/unitConversie";
 import { eenheidWeergave } from "@/lib/eenheden";
 import { formatHoeveelheid } from "@/lib/hoeveelheidWeergave";
@@ -33,33 +34,12 @@ export default function PortieSchuif({
     <div>
       {/* Portie selector */}
       {standaardPorties > 0 && (
-        <div className="flex items-center gap-3 mb-5 pb-5 border-b border-neutral-100">
-          <button
-            onClick={() => setPorties((p) => Math.max(1, p - 1))}
-            className="w-8 h-8 border border-neutral-300 flex items-center justify-center text-neutral-600 hover:border-olive-600 transition-colors text-lg leading-none"
-            aria-label="Minder porties"
-          >
-            −
-          </button>
-          <span className="text-sm font-medium text-neutral-900 min-w-[80px] text-center">
-            {porties} {porties === 1 ? "portie" : "porties"}
-          </span>
-          <button
-            onClick={() => setPorties((p) => p + 1)}
-            className="w-8 h-8 border border-neutral-300 flex items-center justify-center text-neutral-600 hover:border-olive-600 transition-colors text-lg leading-none"
-            aria-label="Meer porties"
-          >
-            +
-          </button>
-          {porties !== standaardPorties && (
-            <button
-              onClick={() => setPorties(standaardPorties)}
-              className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors ml-1"
-            >
-              Reset
-            </button>
-          )}
-        </div>
+        <PortieKiezer
+          porties={porties}
+          standaard={standaardPorties}
+          onChange={setPorties}
+          className="mb-5 pb-5 border-b border-neutral-100"
+        />
       )}
 
       {/* Unit conversion toggle */}

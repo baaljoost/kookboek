@@ -11,6 +11,10 @@ import CategorieFilter from "@/components/CategorieFilter";
 import DieetMenu from "@/components/DieetMenu";
 import { isVegetarisch, isVegan } from "@/lib/dieetFilter";
 import { normaliseerNaam } from "@/lib/productKoppeling";
+import { isIngelogd } from "@/lib/auth";
+import { receptIdsInMandje } from "@/lib/weekMandje";
+import WeekLink from "@/components/WeekLink";
+import WeekToevoegKnop from "@/components/WeekToevoegKnop";
 
 interface SearchParams {
   categorie?: string;
@@ -30,6 +34,9 @@ export default async function HomePage({
 
   const cookieStore = await cookies();
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
+  // Weekmenu: alleen met een echte, getekende login (niet de modus-cookie)
+  const ingelogd = await isIngelogd();
+  const inMandje = new Set(ingelogd ? await receptIdsInMandje() : []);
 
   // Ingebracht-filter: komma-gescheiden namen
   const ingebrachtNamen = ingebracht
@@ -179,6 +186,7 @@ export default async function HomePage({
               {recepten.length} recepten
             </p>
           </div>
+          <WeekLink className="mt-2" />
         </div>
       </header>
 
@@ -249,10 +257,10 @@ export default async function HomePage({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {recepten.map((recept) => (
+              <div key={recept.id} className="relative group">
               <Link
-                key={recept.id}
                 href={`/recepten/${recept.slug}`}
-                className="group block"
+                className="block"
               >
                 <div className="aspect-[4/3] bg-neutral-100 overflow-hidden mb-3">
                   {recept.fotos[0] ? (
@@ -328,6 +336,10 @@ export default async function HomePage({
                   </div>
                 </div>
               </Link>
+              {ingelogd && (
+                <WeekToevoegKnop receptId={recept.id} opWeekmenu={inMandje.has(recept.id)} />
+              )}
+              </div>
             ))}
           </div>
         )}

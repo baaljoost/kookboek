@@ -15,6 +15,9 @@ import VerwijderReceptKnop from "@/components/VerwijderReceptKnop";
 import OpmerkingFormulier from "@/components/OpmerkingFormulier";
 import VerwijderOpmerkingKnop from "@/components/VerwijderOpmerkingKnop";
 import SchermWakeLock from "@/components/SchermWakeLock";
+import OpWeekmenuKnop from "@/components/OpWeekmenuKnop";
+import WeekLink from "@/components/WeekLink";
+import { isIngelogd } from "@/lib/auth";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +61,7 @@ export default async function ReceptPagina({
 
   const cookieStore = await cookies();
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
+  const ingelogd = await isIngelogd();
 
   const recept = await prisma.recept.findUnique({
     where: { slug },
@@ -71,6 +75,10 @@ export default async function ReceptPagina({
   });
 
   if (!recept) notFound();
+
+  const opWeekmenu = ingelogd
+    ? (await prisma.weekItem.count({ where: { receptId: recept.id } })) > 0
+    : false;
 
   // Detect American units in ingredients and steps
   const heeftAmerikaans = heeftAmerikaanseEenheden(
@@ -94,7 +102,10 @@ export default async function ReceptPagina({
           >
             ← Het Kookboek van Joost
           </Link>
-          {isBeheerder && <VerwijderReceptKnop id={recept.id} titel={recept.titel} />}
+          <div className="flex items-center gap-4">
+            <WeekLink />
+            {isBeheerder && <VerwijderReceptKnop id={recept.id} titel={recept.titel} />}
+          </div>
         </div>
       </header>
 
@@ -192,8 +203,9 @@ export default async function ReceptPagina({
             {/* Ingrediënten */}
             <div className="md:col-span-1">
               <div className="sticky top-6">
-                <div className="mb-6 space-y-2">
+                <div className="mb-6 space-y-2 empty:hidden">
                   <SchermWakeLock />
+                  {ingelogd && <OpWeekmenuKnop receptId={recept.id} opWeekmenu={opWeekmenu} />}
                 </div>
                 <h2 className="font-serif text-2xl text-neutral-900 mb-4">
                   Ingrediënten

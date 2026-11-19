@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { controleerSessieToken, maakSessieToken, SESSIE_DUUR_MS } from "./sessie";
 
@@ -10,6 +11,16 @@ export const SESSION_COOKIE = "kookboek_admin";
 export async function isIngelogd(): Promise<boolean> {
   const cookieStore = await cookies();
   return controleerSessieToken(cookieStore.get(SESSION_COOKIE)?.value);
+}
+
+// Voor routes: geeft een 401-antwoord terug als je niet ingelogd bent, anders null.
+// Routes controleren dit zelf, náást de middleware; het verbergen van knoppen
+// is nooit de beveiliging.
+//   const nee = await eisLogin();
+//   if (nee) return nee;
+export async function eisLogin(): Promise<NextResponse | null> {
+  if (await isIngelogd()) return null;
+  return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
 }
 
 // Oude naam, zelfde controle.

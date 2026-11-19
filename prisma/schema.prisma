@@ -31,6 +31,8 @@ model Recept {
   fotos           Foto[]
   tags            ReceptTag[]
   opmerkingen     Opmerking[]
+  weekItem        WeekItem?
+  weekGeschiedenis WeekGeschiedenis[]
 }
 
 model Ingredient {
@@ -68,6 +70,27 @@ model ProductSynoniem {
   tekst     String  @unique // genormaliseerd: meervoud, Engelse naam, spelvariant
   productId Int
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// Het mandje: de recepten die je deze week eet.
+model WeekItem {
+  id        Int      @id @default(autoincrement())
+  receptId  Int      @unique // een recept staat maximaal één keer in het mandje
+  recept    Recept   @relation(fields: [receptId], references: [id], onDelete: Cascade)
+  porties   Int?     // gekozen porties; null = recept heeft geen porties (factor 1)
+  createdAt DateTime @default(now())
+}
+
+// "Nieuwe week" bewaart hier de recepten van die week.
+model WeekGeschiedenis {
+  id          Int      @id @default(autoincrement())
+  afgerondOp  DateTime @default(now()) // alle regels van één "Nieuwe week" delen dezelfde waarde
+  receptId    Int?
+  recept      Recept?  @relation(fields: [receptId], references: [id], onDelete: SetNull)
+  receptTitel String   // kopie van de titel, voor als het recept later wordt verwijderd
+  porties     Int?
+
+  @@index([afgerondOp])
 }
 
 model Stap {
