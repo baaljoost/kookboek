@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { eisLogin } from "@/lib/auth";
 
-// "Nieuwe week": bewaar de recepten van deze week in de geschiedenis en leeg het mandje.
+// "Nieuwe week": bewaar de recepten van deze week in de geschiedenis en leeg het mandje
+// en de eigen regels.
 // Alles in één transactie, met voor alle regels dezelfde datum.
 export async function POST() {
   const nee = await eisLogin();
@@ -25,6 +26,7 @@ export async function POST() {
       });
     }
     await tx.weekItem.deleteMany();
+    await tx.lijstRegel.deleteMany();
     return items.length;
   });
 
