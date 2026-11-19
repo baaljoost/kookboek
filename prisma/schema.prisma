@@ -108,6 +108,15 @@ model LijstVink {
   createdAt DateTime @default(now())
 }
 
+// De geheime deellink voor de boodschappenlijst. Eén rij (id 1). De code staat
+// leesbaar in de database, omdat de link in beheer getoond moet kunnen worden.
+model DeelLink {
+  id          Int      @id @default(1)
+  code        String   @unique
+  createdAt   DateTime @default(now())
+  vernieuwdOp DateTime @default(now())
+}
+
 model Stap {
   id       Int    @id @default(autoincrement())
   volgorde Int

@@ -88,6 +88,7 @@ export default function AdminNav({ isBeheerder, aantalVoorgesteld, aantalImportM
               )}
             </span>
           )}
+          {navLink("/admin/deellink", "Deellink")}
         </div>
 
         {/* Rechts: toggle + uitloggen */}
