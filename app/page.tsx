@@ -13,7 +13,6 @@ import { isVegetarisch, isVegan } from "@/lib/dieetFilter";
 import { normaliseerNaam } from "@/lib/productKoppeling";
 import { isIngelogd } from "@/lib/auth";
 import { receptIdsInMandje } from "@/lib/weekMandje";
-import WeekLink from "@/components/WeekLink";
 import WeekToevoegKnop from "@/components/WeekToevoegKnop";
 
 interface SearchParams {
@@ -186,7 +185,6 @@ export default async function HomePage({
               {recepten.length} recepten
             </p>
           </div>
-          <WeekLink className="mt-2" />
         </div>
       </header>
 
@@ -345,13 +343,19 @@ export default async function HomePage({
         )}
       </div>
 
-      {/* Floating knop */}
+      {/* Floating knop. Ingelogd: naar het weekmenu; bezoekers: recept insturen. */}
       <Link
-        href={isBeheerder ? "/admin/recepten/nieuw" : "/recepten/voorstellen"}
+        href={ingelogd ? "/week" : isBeheerder ? "/admin/recepten/nieuw" : "/recepten/voorstellen"}
         className="fixed bottom-6 right-6 bg-olive-700 text-white px-5 py-3 shadow-lg hover:bg-olive-800 transition-colors text-sm font-medium flex items-center gap-2 z-50"
       >
-        <span className="text-lg leading-none">+</span>
-        {isBeheerder ? "Recept toevoegen" : "Stuur een recept in!"}
+        {ingelogd ? (
+          <>Deze week · {inMandje.size}</>
+        ) : (
+          <>
+            <span className="text-lg leading-none">+</span>
+            {isBeheerder ? "Recept toevoegen" : "Stuur een recept in!"}
+          </>
+        )}
       </Link>
     </div>
   );

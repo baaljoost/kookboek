@@ -3,7 +3,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { isIngelogd } from "@/lib/auth";
 import { laadLijst } from "@/lib/lijstData";
-import WeekLink from "@/components/WeekLink";
 import LijstWeergave from "@/components/LijstWeergave";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +22,6 @@ export default async function LijstPagina() {
           >
             ← Weekmenu
           </Link>
-          <WeekLink />
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-6 py-8">

@@ -15,10 +15,6 @@ export function geldigePorties(waarde: unknown): number | null {
     : null;
 }
 
-export async function aantalInMandje(): Promise<number> {
-  return prisma.weekItem.count();
-}
-
 export async function receptIdsInMandje(): Promise<number[]> {
   const items = await prisma.weekItem.findMany({ select: { receptId: true } });
   return items.map((i) => i.receptId);
