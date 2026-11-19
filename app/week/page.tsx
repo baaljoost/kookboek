@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { isIngelogd } from "@/lib/auth";
 import WeekLink from "@/components/WeekLink";
+import { laadLijst } from "@/lib/lijstData";
+import { telRegels } from "@/lib/boodschappenlijst";
 import WeekMandje, { type MandjeItem, type ZoekRecept } from "@/components/WeekMandje";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +14,7 @@ export const metadata: Metadata = { title: "Weekmenu", robots: { index: false } 
 export default async function WeekPagina() {
   if (!(await isIngelogd())) redirect("/admin/login");
 
-  const [items, alle] = await Promise.all([
+  const [items, alle, lijst] = await Promise.all([
     prisma.weekItem.findMany({
       orderBy: { createdAt: "asc" },
       include: {
@@ -32,7 +34,9 @@ export default async function WeekPagina() {
       orderBy: { titel: "asc" },
       select: { id: true, slug: true, titel: true, porties: true, fotos: { orderBy: { volgorde: "asc" }, take: 1, select: { url: true } } },
     }),
+    laadLijst(),
   ]);
+  const aantalRegels = telRegels(lijst.secties, new Set()).totaal;
 
   const mandje: MandjeItem[] = items.map((i) => ({
     receptId: i.recept.id,
@@ -65,7 +69,13 @@ export default async function WeekPagina() {
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-6 py-8">
-        <h1 className="font-serif text-3xl text-neutral-900 mb-6">Weekmenu</h1>
+        <h1 className="font-serif text-3xl text-neutral-900 mb-2">Weekmenu</h1>
+        <Link
+          href="/week/lijst"
+          className="inline-block mb-6 text-xs uppercase tracking-widest text-olive-700 hover:text-olive-800 transition-colors"
+        >
+          Boodschappenlijst · {aantalRegels} {aantalRegels === 1 ? "regel" : "regels"} →
+        </Link>
         <WeekMandje initieel={mandje} alle={zoek} />
       </main>
     </div>

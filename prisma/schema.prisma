@@ -93,6 +93,13 @@ model WeekGeschiedenis {
   @@index([afgerondOp])
 }
 
+// Eigen regels op de boodschappenlijst ("wc-papier").
+model LijstRegel {
+  id        Int      @id @default(autoincrement())
+  tekst     String
+  createdAt DateTime @default(now())
+}
+
 model Stap {
   id       Int    @id @default(autoincrement())
   volgorde Int
