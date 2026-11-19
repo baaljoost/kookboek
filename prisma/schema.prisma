@@ -100,6 +100,14 @@ model LijstRegel {
   createdAt DateTime @default(now())
 }
 
+// Een vinkje op de boodschappenlijst: de rij bestaat = afgevinkt. De sleutel hoort
+// bij een lijstregel (zie lib/boodschappenlijst.ts) en blijft gelijk als porties of
+// recepten veranderen. Bewust geen relaties.
+model LijstVink {
+  sleutel   String   @id
+  createdAt DateTime @default(now())
+}
+
 model Stap {
   id       Int    @id @default(autoincrement())
   volgorde Int

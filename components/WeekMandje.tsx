@@ -88,7 +88,7 @@ export default function WeekMandje({ initieel, alle }: { initieel: MandjeItem[];
   async function nieuweWeek() {
     if (
       !confirm(
-        "Nieuwe week beginnen? Het mandje en je eigen regels worden leeggemaakt. De recepten blijven bewaard in de geschiedenis."
+        "Nieuwe week beginnen? Het mandje, de vinkjes en je eigen regels worden leeggemaakt. De recepten blijven bewaard in de geschiedenis."
       )
     )
       return;

@@ -12,6 +12,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   const id = geldigeReceptId((await params).id); // zelfde controle: positief geheel getal
   if (!id) return NextResponse.json({ error: "Ongeldige regel" }, { status: 400 });
 
-  await prisma.lijstRegel.deleteMany({ where: { id } });
+  await prisma.$transaction([
+    prisma.lijstRegel.deleteMany({ where: { id } }),
+    prisma.lijstVink.deleteMany({ where: { sleutel: `e${id}` } }),
+  ]);
   return NextResponse.json(await laadLijst());
 }
