@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import SchakelKnop, { SchermIcoon } from "./SchakelKnop";
 
 type WakeLockSentinel = any;
 
@@ -75,19 +76,18 @@ export default function SchermWakeLock() {
     return null;
   }
 
+  // De ruimte eromheen regelt de pagina, zodat de knop direct boven
+  // "Op weekmenu" kan staan.
   return (
-    <div className="mb-6">
-      <button
+    <>
+      <SchakelKnop
+        aan={isActive}
+        labelUit="Scherm aan houden"
+        labelAan="Scherm blijft aan"
+        icoonUit={<SchermIcoon />}
         onClick={toggleWakeLock}
-        className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-          isActive
-            ? "bg-olive-100 text-olive-900 border border-olive-300"
-            : "bg-neutral-100 text-neutral-700 border border-neutral-200 hover:border-neutral-300"
-        }`}
-      >
-        {isActive ? "🔒 Scherm blijft aan" : "📱 Scherm aan houden"}
-      </button>
-      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
-    </div>
+      />
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </>
   );
 }

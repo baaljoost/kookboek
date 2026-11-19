@@ -192,7 +192,9 @@ export default async function ReceptPagina({
             {/* Ingrediënten */}
             <div className="md:col-span-1">
               <div className="sticky top-6">
-                <SchermWakeLock />
+                <div className="mb-6 space-y-2">
+                  <SchermWakeLock />
+                </div>
                 <h2 className="font-serif text-2xl text-neutral-900 mb-4">
                   Ingrediënten
                 </h2>
