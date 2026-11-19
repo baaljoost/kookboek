@@ -3,7 +3,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { isIngelogd } from "@/lib/auth";
-import WeekLink from "@/components/WeekLink";
 import { laadLijst } from "@/lib/lijstData";
 import { telRegels } from "@/lib/boodschappenlijst";
 import WeekMandje, { type MandjeItem, type ZoekRecept } from "@/components/WeekMandje";
@@ -65,7 +64,6 @@ export default async function WeekPagina() {
           >
             ← Het Kookboek van Joost
           </Link>
-          <WeekLink />
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-6 py-8">

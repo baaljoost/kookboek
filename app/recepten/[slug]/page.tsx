@@ -16,7 +16,6 @@ import OpmerkingFormulier from "@/components/OpmerkingFormulier";
 import VerwijderOpmerkingKnop from "@/components/VerwijderOpmerkingKnop";
 import SchermWakeLock from "@/components/SchermWakeLock";
 import OpWeekmenuKnop from "@/components/OpWeekmenuKnop";
-import WeekLink from "@/components/WeekLink";
 import { isIngelogd } from "@/lib/auth";
 import type { Metadata } from "next";
 
@@ -102,10 +101,7 @@ export default async function ReceptPagina({
           >
             ← Het Kookboek van Joost
           </Link>
-          <div className="flex items-center gap-4">
-            <WeekLink />
-            {isBeheerder && <VerwijderReceptKnop id={recept.id} titel={recept.titel} />}
-          </div>
+          {isBeheerder && <VerwijderReceptKnop id={recept.id} titel={recept.titel} />}
         </div>
       </header>
 

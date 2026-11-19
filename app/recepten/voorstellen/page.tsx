@@ -1,21 +1,17 @@
 import Link from "next/link";
 import VoorstelFormulier from "@/components/VoorstelFormulier";
-import WeekLink from "@/components/WeekLink";
 
 export default function VoorstellenPage() {
   return (
     <div className="min-h-screen bg-cream-50">
       <header className="border-b border-neutral-200 bg-white">
         <div className="max-w-3xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between gap-4">
-            <Link
-              href="/"
-              className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors"
-            >
-              ← Naar het kookboek
-            </Link>
-            <WeekLink />
-          </div>
+          <Link
+            href="/"
+            className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors"
+          >
+            ← Naar het kookboek
+          </Link>
           <h1 className="font-serif text-2xl text-neutral-900 mt-1">
             Recept voorstellen
           </h1>
