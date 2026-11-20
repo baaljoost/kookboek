@@ -29,6 +29,17 @@ export async function vernieuwCode(): Promise<string> {
   return code;
 }
 
+// Geeft de huidige code, en maakt de link alleen als er nog geen is. Anders dan
+// vernieuwCode verandert dit nooit een bestaande code. Een upsert is bij
+// Prisma geen atomaire stap (eerst lezen, dan schrijven) en faalt bij twee
+// gelijktijdige aanroepen; INSERT ... ON CONFLICT DO NOTHING (skipDuplicates)
+// kan dat niet, waarna iedereen dezelfde rij leest.
+export async function zorgVoorCode(): Promise<string> {
+  await prisma.deelLink.createMany({ data: [{ id: LINK_ID, code: maakCode() }], skipDuplicates: true });
+  const rij = await prisma.deelLink.findUniqueOrThrow({ where: { id: LINK_ID }, select: { code: true } });
+  return rij.code;
+}
+
 // Klopt de code met de huidige? Vergelijkt in constante tijd.
 export async function controleerCode(code: unknown): Promise<boolean> {
   if (typeof code !== "string" || !/^[A-Za-z0-9_-]{32}$/.test(code)) return false;
