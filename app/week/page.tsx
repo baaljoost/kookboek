@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isIngelogd } from "@/lib/auth";
 import { laadLijst } from "@/lib/lijstData";
 import { telRegels } from "@/lib/boodschappenlijst";
+import BeheerKnop from "@/components/BeheerKnop";
 import WeekMandje, { type MandjeItem, type ZoekRecept } from "@/components/WeekMandje";
 
 export const dynamic = "force-dynamic";
@@ -57,13 +58,14 @@ export default async function WeekPagina() {
   return (
     <div className="min-h-screen bg-cream-50">
       <header className="border-b border-neutral-200 bg-white">
-        <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
+        <div className="max-w-3xl mx-auto px-6 py-2 flex items-center gap-4">
           <Link
             href="/"
-            className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors"
+            className="flex-1 min-w-0 py-3 text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors"
           >
             ← Het Kookboek van Joost
           </Link>
+          <BeheerKnop ingelogd terug="/week" />
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-6 py-8">

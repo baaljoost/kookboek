@@ -14,6 +14,7 @@ import { normaliseerNaam } from "@/lib/productKoppeling";
 import { isIngelogd } from "@/lib/auth";
 import { receptIdsInMandje } from "@/lib/weekMandje";
 import WeekToevoegKnop from "@/components/WeekToevoegKnop";
+import BeheerKnop from "@/components/BeheerKnop";
 import WeekKnop, { ZWEVENDE_KNOP_KLASSE } from "@/components/WeekKnop";
 
 interface SearchParams {
@@ -170,10 +171,10 @@ export default async function HomePage({
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex items-start justify-between">
-          <div>
+        <div className="max-w-6xl mx-auto px-6 py-8 flex items-start gap-4">
+          <div className="flex-1 min-w-0">
             <Link href="/">
-              <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-neutral-900 tracking-tight hover:text-olive-700 transition-colors">
+              <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-neutral-900 tracking-tight hover:text-olive-700 transition-colors break-words">
                 Het Kookboek van{" "}
                 {ingebrachtNamen.length === 0
                   ? "Joost"
@@ -186,6 +187,7 @@ export default async function HomePage({
               {recepten.length} recepten
             </p>
           </div>
+          <BeheerKnop ingelogd={ingelogd} terug={maakUrl({})} className="-mt-1 sm:mt-0" />
         </div>
       </header>
 
