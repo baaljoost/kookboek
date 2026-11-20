@@ -14,6 +14,7 @@ import { normaliseerNaam } from "@/lib/productKoppeling";
 import { isIngelogd } from "@/lib/auth";
 import { receptIdsInMandje } from "@/lib/weekMandje";
 import WeekToevoegKnop from "@/components/WeekToevoegKnop";
+import WeekKnop, { ZWEVENDE_KNOP_KLASSE } from "@/components/WeekKnop";
 
 interface SearchParams {
   categorie?: string;
@@ -344,19 +345,17 @@ export default async function HomePage({
       </div>
 
       {/* Floating knop. Ingelogd: naar het weekmenu; bezoekers: recept insturen. */}
-      <Link
-        href={ingelogd ? "/week" : isBeheerder ? "/admin/recepten/nieuw" : "/recepten/voorstellen"}
-        className="fixed bottom-6 right-6 bg-olive-700 text-white px-5 py-3 shadow-lg hover:bg-olive-800 transition-colors text-sm font-medium flex items-center gap-2 z-50"
-      >
-        {ingelogd ? (
-          <>Deze week · {inMandje.size}</>
-        ) : (
-          <>
-            <span className="text-lg leading-none">+</span>
-            {isBeheerder ? "Recept toevoegen" : "Stuur een recept in!"}
-          </>
-        )}
-      </Link>
+      {ingelogd ? (
+        <WeekKnop aantal={inMandje.size} />
+      ) : (
+        <Link
+          href={isBeheerder ? "/admin/recepten/nieuw" : "/recepten/voorstellen"}
+          className={ZWEVENDE_KNOP_KLASSE}
+        >
+          <span className="text-lg leading-none">+</span>
+          {isBeheerder ? "Recept toevoegen" : "Stuur een recept in!"}
+        </Link>
+      )}
     </div>
   );
 }
