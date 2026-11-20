@@ -18,6 +18,7 @@ import SchermWakeLock from "@/components/SchermWakeLock";
 import OpWeekmenuKnop from "@/components/OpWeekmenuKnop";
 import { WeekAantalProvider, ReceptWeekKnop } from "@/components/WeekAantal";
 import { receptIdsInMandje } from "@/lib/weekMandje";
+import BeheerKnop from "@/components/BeheerKnop";
 import { isIngelogd } from "@/lib/auth";
 import type { Metadata } from "next";
 
@@ -96,14 +97,15 @@ export default async function ReceptPagina({
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white">
-        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-6 py-2 flex items-center gap-4">
           <Link
             href="/"
-            className="text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors"
+            className="flex-1 min-w-0 py-3 text-xs uppercase tracking-widest text-neutral-400 hover:text-olive-700 transition-colors"
           >
             ← Het Kookboek van Joost
           </Link>
           {isBeheerder && <VerwijderReceptKnop id={recept.id} titel={recept.titel} />}
+          <BeheerKnop ingelogd={ingelogd} terug={`/recepten/${recept.slug}`} />
         </div>
       </header>
 

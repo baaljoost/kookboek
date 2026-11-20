@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { controleerCode } from "@/lib/deelLink";
 import { laadLijst } from "@/lib/lijstData";
+import BeheerKnop from "@/components/BeheerKnop";
+import { isIngelogd } from "@/lib/auth";
 import LijstWeergave from "@/components/LijstWeergave";
 
 export const dynamic = "force-dynamic";
@@ -19,13 +21,14 @@ export const metadata: Metadata = {
 export default async function DeelLijstPagina({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   if (!(await controleerCode(code))) notFound();
-  const stand = await laadLijst();
+  const [stand, ingelogd] = await Promise.all([laadLijst(), isIngelogd()]);
 
   return (
     <div className="min-h-screen bg-cream-50">
       <header className="border-b border-neutral-200 bg-white">
-        <div className="max-w-3xl mx-auto px-6 py-5">
-          <p className="text-xs uppercase tracking-widest text-neutral-400">Het Kookboek van Joost</p>
+        <div className="max-w-3xl mx-auto px-6 py-2 flex items-center gap-4">
+          <p className="flex-1 min-w-0 py-3 text-xs uppercase tracking-widest text-neutral-400">Het Kookboek van Joost</p>
+          <BeheerKnop ingelogd={ingelogd} terug={`/lijst/${code}`} />
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-6 py-8">
