@@ -16,6 +16,8 @@ import OpmerkingFormulier from "@/components/OpmerkingFormulier";
 import VerwijderOpmerkingKnop from "@/components/VerwijderOpmerkingKnop";
 import SchermWakeLock from "@/components/SchermWakeLock";
 import OpWeekmenuKnop from "@/components/OpWeekmenuKnop";
+import { WeekAantalProvider, ReceptWeekKnop } from "@/components/WeekAantal";
+import { receptIdsInMandje } from "@/lib/weekMandje";
 import { isIngelogd } from "@/lib/auth";
 import type { Metadata } from "next";
 
@@ -75,9 +77,8 @@ export default async function ReceptPagina({
 
   if (!recept) notFound();
 
-  const opWeekmenu = ingelogd
-    ? (await prisma.weekItem.count({ where: { receptId: recept.id } })) > 0
-    : false;
+  const inMandje = ingelogd ? await receptIdsInMandje() : [];
+  const opWeekmenu = inMandje.includes(recept.id);
 
   // Detect American units in ingredients and steps
   const heeftAmerikaans = heeftAmerikaanseEenheden(
@@ -91,6 +92,7 @@ export default async function ReceptPagina({
   );
 
   return (
+    <WeekAantalProvider initieel={inMandje.length}>
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white">
@@ -314,6 +316,9 @@ export default async function ReceptPagina({
           </div>
         </div>
       </main>
+      {/* Zwevende knop: alleen ingelogd en met minstens één recept in het mandje */}
+      <ReceptWeekKnop />
     </div>
+    </WeekAantalProvider>
   );
 }
