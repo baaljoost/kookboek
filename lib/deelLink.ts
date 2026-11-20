@@ -1,7 +1,7 @@
-// De geheime deellink voor de boodschappenlijst: /lijst/<code>.
-// Wie de code kent kan de lijst bekijken, afvinken en eigen regels toevoegen,
-// maar niet het mandje wijzigen. Vernieuwen maakt een nieuwe code; de oude
-// werkt dan direct niet meer.
+// De geheime deellink voor weekmenu en boodschappenlijst: /lijst/<code>.
+// Wie de code kent kan beide aanpassen: recepten toevoegen en weghalen, porties
+// wijzigen, nieuwe week, afvinken en eigen regels toevoegen. Vernieuwen maakt
+// een nieuwe code; de oude werkt dan direct niet meer.
 
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";

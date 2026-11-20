@@ -1,27 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import PortieKiezer from "./PortieKiezer";
+import DeelLijstPopup from "./DeelLijstPopup";
+import type { MandjeItem, ZoekRecept } from "@/lib/weekMandje";
 
-export interface MandjeItem {
-  receptId: number;
-  slug: string;
-  titel: string;
-  fotoUrl: string | null;
-  standaardPorties: number | null;
-  porties: number | null;
-}
-
-export interface ZoekRecept {
-  receptId: number;
-  slug: string;
-  titel: string;
-  fotoUrl: string | null;
-  standaardPorties: number | null;
-}
+export type { MandjeItem, ZoekRecept };
 
 function Foto({ url, titel }: { url: string | null; titel: string }) {
   return (
@@ -31,13 +18,52 @@ function Foto({ url, titel }: { url: string | null; titel: string }) {
   );
 }
 
-export default function WeekMandje({ initieel, alle }: { initieel: MandjeItem[]; alle: ZoekRecept[] }) {
+interface Props {
+  initieel: MandjeItem[];
+  alle: ZoekRecept[];
+  // /api/admin/week voor de eigenaar, /api/lijst/<code>/week voor de deellink
+  apiBasis?: string;
+  // Op de deellink zelf is de code al bekend; zonder haalt de pop-up hem op
+  deelCode?: string;
+}
+
+export default function WeekMandje({ initieel, alle, apiBasis = "/api/admin/week", deelCode }: Props) {
   const router = useRouter();
   const [items, setItems] = useState(initieel);
   const [zoek, setZoek] = useState("");
   const [fout, setFout] = useState("");
   const [bezig, setBezig] = useState(false);
+  const [deelOpen, setDeelOpen] = useState(false);
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const lopend = useRef(0); // aantal wijzigingen onderweg
+
+  // De stand opnieuw ophalen als je de pagina weer opent, zodat wijzigingen
+  // van de ander zichtbaar worden.
+  const ververs = useCallback(async () => {
+    if (lopend.current > 0 || timers.current.size > 0) return; // een eigen wijziging is nog onderweg
+    try {
+      const res = await fetch(apiBasis, { cache: "no-store" });
+      if (res.ok && lopend.current === 0 && timers.current.size === 0) setItems(await res.json());
+    } catch {
+      // offline: de oude stand blijft staan
+    }
+  }, [apiBasis]);
+
+  useEffect(() => {
+    const bijZichtbaar = () => {
+      if (document.visibilityState === "visible") ververs();
+    };
+    // Bij het eerste laden is de stand van de server net binnen; alleen een terugkeer uit de cache telt
+    const bijTerug = (e: PageTransitionEvent) => {
+      if (e.persisted) ververs();
+    };
+    document.addEventListener("visibilitychange", bijZichtbaar);
+    window.addEventListener("pageshow", bijTerug);
+    return () => {
+      document.removeEventListener("visibilitychange", bijZichtbaar);
+      window.removeEventListener("pageshow", bijTerug);
+    };
+  }, [ververs]);
 
   function meld(tekst: string) {
     setFout(tekst);
@@ -51,12 +77,20 @@ export default function WeekMandje({ initieel, alle }: { initieel: MandjeItem[];
     timers.current.set(
       item.receptId,
       setTimeout(async () => {
-        const res = await fetch(`/api/admin/week/${item.receptId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ porties }),
-        });
-        if (!res.ok) meld("Porties opslaan mislukt");
+        timers.current.delete(item.receptId);
+        lopend.current++;
+        try {
+          const res = await fetch(`${apiBasis}/${item.receptId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ porties }),
+          });
+          if (!res.ok) meld("Porties opslaan mislukt");
+        } catch {
+          meld("Porties opslaan mislukt");
+        } finally {
+          lopend.current--;
+        }
       }, 400)
     );
   }
@@ -64,40 +98,66 @@ export default function WeekMandje({ initieel, alle }: { initieel: MandjeItem[];
   async function weghalen(item: MandjeItem) {
     const vorige = items;
     setItems((huidig) => huidig.filter((i) => i.receptId !== item.receptId));
-    const res = await fetch(`/api/admin/week/${item.receptId}`, { method: "DELETE" });
-    if (res.ok) router.refresh();
-    else {
+    clearTimeout(timers.current.get(item.receptId));
+    timers.current.delete(item.receptId);
+    lopend.current++;
+    try {
+      const res = await fetch(`${apiBasis}/${item.receptId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(String(res.status));
+      router.refresh();
+    } catch {
       setItems(vorige);
       meld("Weghalen mislukt");
+    } finally {
+      lopend.current--;
     }
   }
 
   async function toevoegen(recept: ZoekRecept) {
-    const res = await fetch("/api/admin/week", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ receptId: recept.receptId }),
-    });
-    if (!res.ok) return meld("Toevoegen mislukt");
-    const { porties } = (await res.json()) as { porties: number | null };
-    setItems((huidig) => [...huidig, { ...recept, porties }]);
-    setZoek("");
-    router.refresh();
+    lopend.current++;
+    try {
+      const res = await fetch(apiBasis, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ receptId: recept.receptId }),
+      });
+      if (!res.ok) return meld("Toevoegen mislukt");
+      const { porties } = (await res.json()) as { porties: number | null };
+      // Staat het recept er door de ander al in, dan niet dubbel tonen
+      setItems((huidig) =>
+        huidig.some((i) => i.receptId === recept.receptId) ? huidig : [...huidig, { ...recept, porties }]
+      );
+      setZoek("");
+      router.refresh();
+    } catch {
+      meld("Toevoegen mislukt");
+    } finally {
+      lopend.current--;
+    }
   }
 
   async function nieuweWeek() {
     if (
       !confirm(
-        "Nieuwe week beginnen? Het mandje, de vinkjes en je eigen regels worden leeggemaakt. De recepten blijven bewaard in de geschiedenis."
+        "Mandje en vinkjes legen?\n\nEigen regels op de boodschappenlijst worden ook gewist. De recepten blijven bewaard in de geschiedenis."
       )
     )
       return;
     setBezig(true);
-    const res = await fetch("/api/admin/week/nieuw", { method: "POST" });
-    setBezig(false);
-    if (!res.ok) return meld("Nieuwe week mislukt");
-    setItems([]);
-    router.refresh();
+    lopend.current++;
+    try {
+      const res = await fetch(`${apiBasis}/nieuw`, { method: "POST" });
+      if (!res.ok) return meld("Nieuwe week mislukt");
+      timers.current.forEach(clearTimeout);
+      timers.current.clear();
+      setItems([]);
+      router.refresh();
+    } catch {
+      meld("Nieuwe week mislukt");
+    } finally {
+      lopend.current--;
+      setBezig(false);
+    }
   }
 
   const q = zoek.trim().toLowerCase();
@@ -108,13 +168,16 @@ export default function WeekMandje({ initieel, alle }: { initieel: MandjeItem[];
 
   return (
     <div>
+      <div className="flex justify-end mb-4">
+        <button type="button" onClick={() => setDeelOpen(true)} className="btn-secondary !py-1.5 !px-4">
+          Delen
+        </button>
+      </div>
       {fout && <p className="text-sm text-red-600 mb-4">{fout}</p>}
+      {deelOpen && <DeelLijstPopup code={deelCode} tab="weekmenu" onSluiten={() => setDeelOpen(false)} />}
 
       {items.length === 0 ? (
-        <p className="text-sm text-neutral-500 mb-8">
-          Er staan nog geen recepten op het weekmenu. Zoek hieronder een recept, of tik op de plus op een
-          receptkaart.
-        </p>
+        <p className="text-sm text-neutral-500 mb-8">Er staan deze week nog geen recepten op het menu.</p>
       ) : (
         <ul className="mb-8 divide-y divide-neutral-200 border-y border-neutral-200">
           {items.map((item) => (
@@ -123,7 +186,7 @@ export default function WeekMandje({ initieel, alle }: { initieel: MandjeItem[];
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-3">
                   <Link
-                    href={`/recepten/${item.slug}`}
+                    href={item.porties ? `/recepten/${item.slug}?porties=${item.porties}` : `/recepten/${item.slug}`}
                     className="font-serif text-lg text-neutral-900 hover:text-olive-700 transition-colors leading-snug"
                   >
                     {item.titel}

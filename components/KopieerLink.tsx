@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 // De link in een veld met een knop "Kopieer link", die kort "Gekopieerd" toont.
-// Gedeeld door de pop-up op de boodschappenlijst en de beheerpagina; knoppen
+// Gedeeld door de pop-up op weekmenu en boodschappenlijst en de beheerpagina; knoppen
 // die alleen daar horen (zoals "Vernieuw link") komen als children achter de
 // kopieerknop.
 export default function KopieerLink({ link, children }: { link: string; children?: ReactNode }) {
@@ -28,7 +28,7 @@ export default function KopieerLink({ link, children }: { link: string; children
 
   return (
     <div>
-      <label className="label" htmlFor="deellink">Link naar de boodschappenlijst</label>
+      <label className="label" htmlFor="deellink">Deellink</label>
       <input id="deellink" readOnly value={link} onFocus={(e) => e.currentTarget.select()} className="input mb-3" />
       <div className="flex flex-wrap gap-3">
         <button type="button" onClick={kopieer} className="btn-primary">

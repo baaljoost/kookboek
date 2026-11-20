@@ -17,7 +17,7 @@ import VerwijderOpmerkingKnop from "@/components/VerwijderOpmerkingKnop";
 import SchermWakeLock from "@/components/SchermWakeLock";
 import OpWeekmenuKnop from "@/components/OpWeekmenuKnop";
 import { WeekAantalProvider, ReceptWeekKnop } from "@/components/WeekAantal";
-import { receptIdsInMandje } from "@/lib/weekMandje";
+import { receptIdsInMandje, geldigePorties } from "@/lib/weekMandje";
 import BeheerKnop from "@/components/BeheerKnop";
 import { isIngelogd } from "@/lib/auth";
 import type { Metadata } from "next";
@@ -56,10 +56,15 @@ export async function generateStaticParams() {
 
 export default async function ReceptPagina({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ porties?: string | string[] }>;
 }) {
   const { slug } = await params;
+  // ?porties=4 (vanaf het weekmenu) opent de portieschuif met dat aantal
+  const { porties: portiesParam } = await searchParams;
+  const beginPorties = geldigePorties(typeof portiesParam === "string" && /^\d{1,2}$/.test(portiesParam) ? Number(portiesParam) : null) ?? undefined;
 
   const cookieStore = await cookies();
   const isBeheerder = cookieStore.get(MODUS_COOKIE)?.value === MODUS_BEHEERDER;
@@ -212,6 +217,7 @@ export default async function ReceptPagina({
                 </h2>
                 <PortieSchuif
                   standaardPorties={recept.porties ?? undefined}
+                  beginPorties={beginPorties}
                   ingredienten={recept.ingredienten.map((ing) => ({
                     id: ing.id,
                     hoeveelheid: ing.hoeveelheid,

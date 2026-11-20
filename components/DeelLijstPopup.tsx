@@ -4,10 +4,19 @@ import { useEffect, useState } from "react";
 import Popup from "./Popup";
 import KopieerLink from "./KopieerLink";
 
-// Pop-up met de geheime deellink van de boodschappenlijst. Op /lijst/<code>
-// is de code al bekend; op /week/lijst wordt hij opgehaald en, als er nog geen
+// Pop-up met de geheime deellink voor weekmenu en boodschappenlijst, met één
+// code. `tab` bepaalt welk tabblad de link opent. Op /lijst/<code> is de code
+// al bekend; op /week en /week/lijst wordt hij opgehaald en, als er nog geen
 // link is, aangemaakt. Vernieuwen kan alleen in beheer.
-export default function DeelLijstPopup({ code: bekendeCode, onSluiten }: { code?: string; onSluiten: () => void }) {
+export default function DeelLijstPopup({
+  code: bekendeCode,
+  tab,
+  onSluiten,
+}: {
+  code?: string;
+  tab: "weekmenu" | "boodschappen";
+  onSluiten: () => void;
+}) {
   const [code, setCode] = useState<string | null>(bekendeCode ?? null);
   const [fout, setFout] = useState(false);
 
@@ -28,12 +37,12 @@ export default function DeelLijstPopup({ code: bekendeCode, onSluiten }: { code?
   }, [bekendeCode]);
 
   return (
-    <Popup titel="Lijst delen" onSluiten={onSluiten}>
+    <Popup titel="Delen" onSluiten={onSluiten}>
       <p className="text-neutral-500 text-sm mb-6">
-        Wie deze link heeft kan de lijst bekijken, afvinken en eigen regels toevoegen.
+        Iedereen met deze link kan het weekmenu en de boodschappenlijst aanpassen.
       </p>
       {code ? (
-        <KopieerLink link={`${window.location.origin}/lijst/${code}`} />
+        <KopieerLink link={`${window.location.origin}/lijst/${code}?tab=${tab}`} />
       ) : fout ? (
         <p className="text-red-600 text-sm">De link kon niet worden opgehaald. Probeer het later opnieuw.</p>
       ) : (

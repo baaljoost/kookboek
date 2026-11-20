@@ -17,16 +17,19 @@ interface Ingredient {
 
 interface Props {
   standaardPorties?: number;
+  // Aantal porties waarmee de schuif opent (uit ?porties=); standaard het recept zelf
+  beginPorties?: number;
   ingredienten: Ingredient[];
   heeftAmerikaanseEenheden?: boolean;
 }
 
 export default function PortieSchuif({
   standaardPorties = 0,
+  beginPorties,
   ingredienten,
   heeftAmerikaanseEenheden = false,
 }: Props) {
-  const [porties, setPorties] = useState(standaardPorties);
+  const [porties, setPorties] = useState(standaardPorties > 0 && beginPorties ? beginPorties : standaardPorties);
   const { metrisch, setMetrisch } = useEenheid();
   const factor = standaardPorties > 0 ? porties / standaardPorties : 1;
 

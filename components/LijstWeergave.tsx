@@ -128,7 +128,7 @@ export default function LijstWeergave({ initieel, apiBasis, magEigenRegelsVerwij
         )}
       </div>
       {fout && <p className="text-sm text-red-600 mb-4">{fout}</p>}
-      {deelOpen && <DeelLijstPopup code={deelCode} onSluiten={() => setDeelOpen(false)} />}
+      {deelOpen && <DeelLijstPopup code={deelCode} tab="boodschappen" onSluiten={() => setDeelOpen(false)} />}
 
       {stand.secties.map((sectie) => (
         <section key={sectie.id} className="mb-8">
