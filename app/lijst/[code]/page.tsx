@@ -30,7 +30,7 @@ export default async function DeelLijstPagina({ params }: { params: Promise<{ co
       </header>
       <main className="max-w-3xl mx-auto px-6 py-8">
         <h1 className="font-serif text-3xl text-neutral-900 mb-2">Boodschappenlijst</h1>
-        <LijstWeergave initieel={stand} apiBasis={`/api/lijst/${code}`} magEigenRegelsVerwijderen={false} />
+        <LijstWeergave initieel={stand} apiBasis={`/api/lijst/${code}`} magEigenRegelsVerwijderen={false} deelCode={code} />
       </main>
     </div>
   );

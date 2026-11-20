@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import DeelLijstPopup from "./DeelLijstPopup";
 import {
   afgevinktOnderaan,
   EIGEN_SECTIE,
-  lijstAlsTekst,
   telRegels,
   type LijstSectie,
 } from "@/lib/boodschappenlijst";
@@ -19,13 +19,15 @@ interface Props {
   // /api/admin/week/lijst voor de eigenaar, /api/lijst/<code> voor de deellink
   apiBasis: string;
   magEigenRegelsVerwijderen: boolean;
+  // Op de deellink zelf is de code al bekend; zonder haalt de pop-up hem op
+  deelCode?: string;
 }
 
-export default function LijstWeergave({ initieel, apiBasis, magEigenRegelsVerwijderen }: Props) {
+export default function LijstWeergave({ initieel, apiBasis, magEigenRegelsVerwijderen, deelCode }: Props) {
   const [stand, setStand] = useState<Stand>(initieel);
   const [nieuw, setNieuw] = useState("");
   const [fout, setFout] = useState("");
-  const [gekopieerd, setGekopieerd] = useState(false);
+  const [deelOpen, setDeelOpen] = useState(false);
   const [bezig, setBezig] = useState(false);
   const lopend = useRef(0); // aantal vinkverzoeken onderweg
 
@@ -80,26 +82,6 @@ export default function LijstWeergave({ initieel, apiBasis, magEigenRegelsVerwij
     }
   }
 
-  async function delen() {
-    const tekst = lijstAlsTekst(stand.secties, new Set(stand.afgevinkt));
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: "Boodschappenlijst", text: tekst });
-        return;
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") return; // geannuleerd
-        // anders: terugvallen op kopiëren
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(tekst);
-      setGekopieerd(true);
-      setTimeout(() => setGekopieerd(false), 2500);
-    } catch {
-      meld("Delen of kopiëren lukt niet op dit apparaat");
-    }
-  }
-
   async function voegToe(e: React.FormEvent) {
     e.preventDefault();
     if (!nieuw.trim() || bezig) return;
@@ -140,12 +122,13 @@ export default function LijstWeergave({ initieel, apiBasis, magEigenRegelsVerwij
           {totaal === 0 ? "Er staat nog niets op de lijst" : `${aantalKlaar} van ${totaal} afgevinkt`}
         </p>
         {totaal > 0 && (
-          <button type="button" onClick={delen} className="btn-secondary !py-1.5 !px-4">
-            {gekopieerd ? "Gekopieerd" : "Delen"}
+          <button type="button" onClick={() => setDeelOpen(true)} className="btn-secondary !py-1.5 !px-4">
+            Delen
           </button>
         )}
       </div>
       {fout && <p className="text-sm text-red-600 mb-4">{fout}</p>}
+      {deelOpen && <DeelLijstPopup code={deelCode} onSluiten={() => setDeelOpen(false)} />}
 
       {stand.secties.map((sectie) => (
         <section key={sectie.id} className="mb-8">
